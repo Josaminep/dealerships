@@ -284,7 +284,6 @@ foreach ($stocks as $product) {
                 </div>
             </div>
 
-
         <script>
             const salesChartMonthly = new Chart(document.getElementById('salesChartMonthly'), {
                 type: 'line',
