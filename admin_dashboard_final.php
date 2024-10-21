@@ -89,6 +89,8 @@ foreach ($stocks as $product) {
 }
 ?>
 
+<?php include 'sidebar.php'; ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,51 +105,6 @@ foreach ($stocks as $product) {
             margin: 0;
             padding: 0;
         }
-
-        .sidebar {
-            width: 250px;
-            background: #00203f;
-            height: 100vh;
-            position: fixed;
-            color: white;
-            overflow-y: auto;
-        }
-
-        .sidebar h2 {
-            font-size: 24px;
-            color: #f4f4f4;
-            text-align: center;
-            margin: 40px 0 20px 0;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-        }
-
-        .sidebar ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .sidebar ul li {
-            margin: 10px 0;
-        }
-
-        .sidebar ul li a {
-            display: block;
-            padding: 15px;
-            background-color: #005f73;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            border-radius: 5px;
-            font-size: 16px;
-            margin: 0 10px;
-            transition: background-color 0.3s;
-        }
-
-        .sidebar ul li a:hover {
-            background-color: #0a9396;
-        }
-
         .content {
             margin-left: 270px; /* Adjusted for sidebar width */
             padding: 20px;
@@ -251,17 +208,6 @@ foreach ($stocks as $product) {
     </style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <h2>Dashboard</h2>
-        <ul>
-            <li><a href='./admin_dashboard_final.php'>DASHBOARD</a></li>
-            <li><a href='./add_stocks_admin.php'>ADD STOCKS PER BRANCH</a></li>
-            <li><a href='./add_product5.php'>PRODUCTS</a></li>
-            <li><a href='./branch_records_admin.php'>COMPLETED ORDERS</a></li>
-            <li><a href="./logout.php">Logout</a></li>
-        </ul>
-    </div>
 
     <div class="content">
         <div class="header">
