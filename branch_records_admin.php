@@ -1,6 +1,10 @@
 <?php
 session_start();
+
+include 'sidebar.php';
+
 require 'db.php'; // Include your database connection file
+
 
 // Check if user is logged in and is an admin
 if (!isset($_SESSION['admin_user_id']) || $_SESSION['admin_role'] !== 'admin') {
@@ -83,21 +87,52 @@ $receipts = $db->query("SELECT r.id, r.receipt_details, r.created_at, s.total_pr
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAIN BRANCH RECORDS</title>
+
     <style>
-        
-  
-      
+ /* Global styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa; /* Light gray background for the body */
+    color: #343a40;
+    margin: 0;
+    padding: 0;
+}
+
+/* Content area styling */
+.content {
+    margin-left: 240px; /* Space for sidebar */
+    padding: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Header styles */
+.header {
+    background-color: #003366; /* Dark blue background */
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 28px;
+    color: white; /* White text for better contrast */
+    margin: 0;
+}
 
 /* Scrollable section for receipt output */
 .records_data {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
     height: 600px; /* Fixed height for scrollable area */
-    overflow-y: scroll; /* Enable vertical scroll */
+    overflow-y: auto; /* Enable vertical scroll */
     border: 2px solid black; /* Optional border for clarity */
     padding: 10px;
     background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
 }
 
 .records_data h1 {
@@ -105,33 +140,49 @@ $receipts = $db->query("SELECT r.id, r.receipt_details, r.created_at, s.total_pr
     margin-bottom: 20px;
 }
 
+/* Table styles */
 table {
     width: 100%;
+    margin-top: 20px;
     border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Table shadow */
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 th, td {
-    padding: 10px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
     text-align: left;
-    border: 1px solid #ccc;
-    font-size: 18px;
+    font-size: 16px;
+    color: #495057;
 }
 
 th {
-    background-color: #e0e0e0; /* Slightly darker grey for header */
+    background-color: #007bff; /* Table header color */
+    color: white;
+    text-transform: uppercase;
+    font-weight: bold;
 }
 
 tr:nth-child(even) {
-    background-color: #f9f9f9; /* Zebra striping for readability */
+    background-color: #f9f9f9; /* Zebra striping for rows */
 }
 
+tr:hover {
+    background-color: #f1f1f1; /* Row hover effect */
+}
+
+/* Button styles */
 .print-button, .delete-button {
     margin-left: 10px;
-    padding: 5px 10px;
+    padding: 10px 20px;
     cursor: pointer;
     border: none;
+    border-radius: 5px;
     color: white;
-    border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
 .print-button {
@@ -142,396 +193,79 @@ tr:nth-child(even) {
     background-color: #f44336; /* Red */
 }
 
-/* Sidebar */
-.sidebar {
-    width: 20%;
-    background-color: black;
-    height: 100vh;
-    position: fixed;
+.print-button:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+.delete-button:hover {
+    background-color: #d32f2f; /* Darker red on hover */
+}
+
+/* Alert box styling */
+#alert {
+    display: none;
+    padding: 15px;
+    background-color: #f39c12; /* Alert color */
     color: white;
-}
-
-.sidebar h2 {
-    font-size: 40px;
-    color: white;
-    text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ddd;
-    padding-top: 40px;
-}
-
-.sidebar ul {
-    list-style-type: none;
-    padding: 0;
-   
-}
-
-.sidebar ul li {
-    margin-bottom: 15px;
-    margin-top: 20px;
-}
-
-/* Button Link Styling */
-.sidebar ul li a {
-    display: block;
-    padding: 20px;
-    background-color: #5cb85c;
-    color: white;
-    text-decoration: none;
-    text-align: center;
+    font-weight: bold;
     border-radius: 5px;
-    font-size: 16px;
-    margin-left: 20px;
-    margin-right: 20px;
-    
-}
-
-.sidebar ul li a:hover {
-    background-color: burlywood;
-}
-
-/* Special styling for logout button */
-.sidebar ul li a[href="logout.php"] {
-    background-color: #d9534f;
-}
-
-.sidebar ul li a[href="logout.php"]:hover {
-    background-color: burlywood;
-}
-.content {
-    margin-left: 20%;
-    padding: 20px;
-}
-
-.header {
     text-align: center;
-    padding: 20px 0;
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.header h1 {
-    color: black;
-    font-size: 24px;
-    border: 3px solid #a76df0;
-    display: inline-block;
-    padding: 5px 15px;
-}
-
-.main-content {
-    background-color: #e0e0e0;
-    min-height: 50vh;
-    border: 3px solid black;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-}
-
-/* Ensure scroll inside content */
-.main-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.main-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.main-content::-webkit-scrollbar-thumb {
-    background: #888;
-}
-
-.main-content::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-}
-
-body {
-font-family: Arial, sans-serif;
-background-color: lightgrey;
-}
-
-.sidebar {
-width: 100%;
-max-width: 250px;
-background-color: black;
-height: 100vh;
-position: fixed;
-color: white;
-overflow-y: auto;
-}
-
-.sidebar h2 {
-font-size: 24px;
-color: white;
-text-align: center;
-margin-bottom: 20px;
-padding-bottom: 10px;
-border-bottom: 1px solid #ddd;
-padding-top: 40px;
-}
-
-.sidebar ul {
-list-style-type: none;
-padding: 0;
-}
-
-.sidebar ul li {
-margin-bottom: 15px;
-margin-top: 20px;
-}
-
-/* Button Link Styling */
-.sidebar ul li a {
-display: block;
-padding: 15px;
-background-color: #5cb85c;
-color: white;
-text-decoration: none;
-text-align: center;
-border-radius: 5px;
-font-size: 16px;
-margin-left: 10px;
-margin-right: 10px;
-}
-
-.sidebar ul li a:hover {
-background-color: burlywood;
-}
-
-/* Special styling for logout button */
-.sidebar ul li a[href="logout.php"] {
-background-color: #d9534f;
-}
-
-.sidebar ul li a[href="logout.php"]:hover {
-background-color: burlywood;
-}
-
-.content {
-margin-left: 260px;
-padding: 20px;
-flex: 1;
-}
-
-.header {
-text-align: center;
-padding: 20px 0;
-background-color: #fff;
-box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.header h1 {
-color: black;
-font-size: 24px;
-border: 3px solid #a76df0;
-display: inline-block;
-padding: 5px 15px;
-}
-
-.main-content {
-background-color: #e0e0e0;
-border: 3px solid black;
-display: flex;
-justify-content: center;
-align-items: center;
-font-size: 24px;
-color: #666;
-padding: 20px;
-}
-
-/* Responsive grid layout for form */
-.form-container {
-display: flex;
-flex-direction: column;
-gap: 15px;
-margin: 20px;
-max-width: 600px;
-width: 100%;
-}
-
-.form-container input,
-.form-container select,
-.form-container button {
-padding: 10px;
-border-radius: 5px;
-border: 1px solid #ccc;
-font-size: 16px;
-width: 100%;
-}
-
-/* Table styles for responsiveness */
-table {
-width: 100%;
-border-collapse: collapse;
-margin-top: 20px;
-background-color: white;
-box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-overflow-x: auto;
-}
-
-th, td {
-padding: 10px;
-text-align: left;
-border-bottom: 1px solid #ddd;
-}
-
-th {
-background-color: #f8f8f8;
-color: #333;
-font-weight: bold;
-}
-
-tr:hover {
-background-color: #f1f1f1;
-}
-
-td:last-child {
-text-align: center;
-}
-
-/* Flexbox layout for the reset buttons */
-.reset {
-display: flex;
-justify-content: center;
-gap: 15px;
-flex-wrap: wrap;
-margin-top: 20px;
-}
-
-.reset-button {
-padding: 10px 15px;
-border: none;
-border-radius: 5px;
-color: white;
-cursor: pointer;
-transition: background-color 0.3s;
-}
-
-.reset-button:nth-child(1) {
-background-color: #4CAF50;
-}
-
-.reset-button:nth-child(2) {
-background-color: #2196F3;
-}
-
-.reset-button:nth-child(3) {
-background-color: #FF9800;
-}
-
-.reset-button:nth-child(4) {
-background-color: #f44336;
-}
-
-.reset-button:hover {
-opacity: 0.8;
-}
-
-/* Responsive layout for branch container */
-.branch1_add_stocks {
-margin: 20px auto;
-width: 90%;
-max-width: 600px;
-}
-
-.manage_products {
-margin: 20px;
-}
-
-/* Adjust layout for smaller screens */
-@media (max-width: 768px) {
-.sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
-}
-
-.content {
-    margin-left: 0;
-}
-
-table {
-    font-size: 14px;
-}
-}
-
-@media (max-width: 480px) {
-.form-container {
-    width: 100%;
-}
-
-table th, table td {
-    padding: 10px 5px;
-}
-
-.reset {
-    flex-direction: column;
-    gap: 10px;
-}
-}
-
-
-
-h1 {
-    color: black;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* Form Container */
-.form-container {
     max-width: 600px;
-    margin: 0 auto;
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 30px;
+    margin: 10px auto;
 }
 
-form {
+/* Responsive layout for form */
+.form-container {
     display: flex;
     flex-direction: column;
-}
-
-input[type="text"], 
-input[type="number"], 
-select {
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+    gap: 15px;
+    margin: 20px;
+    max-width: 600px;
     width: 100%;
 }
 
-input[type="submit"], 
-button {
-    padding: 10px;
-    background-color: #5cb85c;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 10px;
+/* Additional form styles */
+.form-container {
+    background-color: #ffffff; /* White background for the form */
+    border-radius: 10px; /* Rounded corners */
+    padding: 20px; /* Padding around the content */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+    max-width: 400px; /* Max width for the form */
+    margin: 0 auto; /* Center the form */
 }
 
-button {
-    background-color: #337ab7;
+/* Label styles */
+.form-container label {
+    font-size: 18px; /* Slightly larger font for labels */
+    color: #343a40; /* Dark text for better readability */
+    margin-bottom: 10px; /* Space below the label */
+    display: block; /* Block display for label */
 }
 
-input[type="submit"]:hover, 
-button:hover {
-    background-color: #4cae4c;
+/* Select box styles */
+.form-container select {
+    padding: 10px; /* Padding inside the select box */
+    border-radius: 5px; /* Rounded corners */
+    border: 1px solid #ced4da; /* Light border */
+    margin-bottom: 20px; /* Space below the select box */
+    width: 100%; /* Full width of the form */
+    font-size: 16px; /* Font size for options */
+}
+
+/* Submit button styles */
+.submit-button {
+    padding: 12px 20px; /* Padding for the button */
+    background-color: #007bff; /* Primary button color */
+    color: white; /* White text */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Pointer on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.submit-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
 }
 
 /* Go Back Button */
@@ -540,14 +274,15 @@ button:hover {
     margin-top: 20px;
     text-decoration: none;
     padding: 10px 20px;
-    background-color: #337ab7;
+    background-color: #007bff; /* Blue */
     color: white;
     border-radius: 5px;
 }
 
 .go-back:hover {
-    background-color: #286090;
+    background-color: #0056b3; /* Darker blue on hover */
 }
+
 .go-back-button {
     display: inline-flex;
     align-items: center;
@@ -565,9 +300,63 @@ button:hover {
 }
 
 .go-back-button:hover {
-    background-color: #4cae4c;
+    background-color: #4cae4c; /* Darker green on hover */
 }
+
+/* Adjust layout for smaller screens */
+@media (max-width: 768px) {
+    .content {
+        margin-left: 0;
+    }
+
+    table {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-container {
+        width: 100%;
+    }
+
+    table th, table td {
+        padding: 10px 5px;
+    }
+}
+/* Form styles */
+#selectionForm {
+    margin: 20px; /* Margin around the form */
+    float: left; /* Align form to the left */
+}
+
+/* Label styles */
+#selectionForm label {
+    font-size: 18px; /* Slightly larger font for labels */
+    color: #343a40; /* Dark text for better readability */
+    margin-bottom: 10px; /* Space below the label */
+    display: block; /* Block display for label */
+}
+
+/* Select box styles */
+#selectionForm select {
+    padding: 10px; /* Padding inside the select box */
+    border-radius: 5px; /* Rounded corners */
+    border: 1px solid #ced4da; /* Light border */
+    margin-top: 5px; /* Space above the select box */
+    margin-bottom: 20px; /* Space below the select box */
+    width: 100%; /* Full width of the form */
+    font-size: 16px; /* Font size for options */
+    appearance: none; /* Remove default styling */
+    background-color: #f8f9fa; /* Light background color */
+}
+
+/* Placeholder styling */
+#selectionForm option:disabled {
+    color: #999; /* Gray color for the placeholder */
+}
+
 </style>
+
     <script>
         function printReceipt(receiptId) {
             var printWindow = window.open('print_receipt.php?id=' + receiptId, '_blank');
@@ -597,25 +386,13 @@ button:hover {
         
     </script>
 </head>
+
 <body>
-
-<div class="sidebar">
-    <h2>Dashboard</h2>
-    <ul>
-        <li><a id="viewProductsBtn" href='./admin_dashboard_final.php'>DASHBOARD</a></li>
-        <li><a id="addProductBtn" href='./add_stocks_admin.php'>ADD STOCKS PER BRANCH</a></li>
-        <li><a id="addProductBtn" href='./add_product5.php'>PRODUCTS</a></li>
-        <li><a id="addProductBtn" href='./branch_records_admin.php'>COMPLETED ORDERS</a></li>
-        <li><a href="../logout.php" >Logout</a></li>
-    </ul>
-</div>
-
 <div class="content">
     <div class="header">
         
         <h1>BRANCH RECORDS OF SALES FOR BRANCH 1</h1>
     </div>
-  
 <div>
 
 <form id="selectionForm">
@@ -630,6 +407,7 @@ button:hover {
         </select>
     </form>
 </div>
+
     <div class="main-content">
         <div class="records_data">
             <h1>Records of sales</h1>
@@ -648,7 +426,7 @@ button:hover {
                     <td><?php echo htmlspecialchars($receipt['receipt_details']); ?></td>
                     <td><?php echo htmlspecialchars($receipt['created_at']); ?></td>
                     <td>
-                        <button class="print-button" onclick="printReceipt(<?php echo $receipt['id']; ?>)">Print</button>
+                        <button class="print-button" style="margin-bottom: 5px;" onclick="printReceipt(<?php echo $receipt['id']; ?>)">Print</button>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="receipt_id" value="<?php echo $receipt['id']; ?>">
                             <button type="submit" name="delete_receipt" class="delete-button">Delete</button>

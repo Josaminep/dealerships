@@ -11,51 +11,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // If user is not found, check if they are a customer
-    if (!$user) {
-        $stmt = $db->prepare("SELECT * FROM customers WHERE username = ?");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
     // Verify the password
     if ($user && password_verify($password, $user['password'])) {
-        if (isset($user['role']) && $user['role'] === 'admin') {
-            $_SESSION['admin_user_id'] = $user['id'];
-            $_SESSION['admin_role'] = $user['role'];
-            $_SESSION['admin_branch_id'] = $user['branch_id'];
-            header("Location: admin_dashboard_final.php");
-        } else if (isset($user['role']) && $user['role'] === 'staff') {
-            $_SESSION['staff_user_id'] = $user['id'];
-            $_SESSION['staff_role'] = $user['role'];
-            $_SESSION['staff_branch_id'] = $user['branch_id'];
+        // Determine the role and branch, and set session variables
+        if (isset($user['role'])) {
+            // Admin login
+            if ($user['role'] === 'admin') {
+                $_SESSION['admin_user_id'] = $user['id'];
+                $_SESSION['admin_role'] = $user['role'];
+                $_SESSION['admin_branch_id'] = $user['branch_id'];
+                header("Location: admin_dashboard_final.php");
+                exit();
+            } 
+            // Staff login
+            elseif ($user['role'] === 'staff') {
+                $_SESSION['staff_user_id'] = $user['id'];
+                $_SESSION['staff_role'] = $user['role'];
+                $_SESSION['staff_branch_id'] = $user['branch_id'];
 
-            // Redirect based on branch ID for staff
-            switch ($user['branch_id']) {
-                case 1:
-                    header("Location: ./branch1/dashboard.php");
-                    break;
-                case 2:
-                    header("Location: ./branch2/dashboard2.php");
-                    break;
-                case 3:
-                    header("Location: ./branch3/dashboard3.php");
-                    break;
-                case 4:
-                    header("Location: ./branch4/dashboard4.php");
-                    break;
-                case 5:
-                    header("Location: ./branch5/dashboard5.php");
-                    break;
-                default:
-                    header("Location: login.php"); // Handle unexpected branch
+                // Redirect based on branch ID for staff
+                switch ($user['branch_id']) {
+                    case 1:
+                        header("Location: ./branch1/dashboard.php");
+                        break;
+                    case 2:
+                        header("Location: ./branch2/dashboard2.php");
+                        break;
+                    case 3:
+                        header("Location: ./branch3/dashboard3.php");
+                        break;
+                    case 4:
+                        header("Location: ./branch4/dashboard4.php");
+                        break;
+                    case 5:
+                        header("Location: ./branch5/dashboard5.php");
+                        break;
+                    default:
+                        header("Location: login.php"); // Handle unexpected branch
+                }
+                exit();
             }
-        } else {
-            // Handle customer login
-            $_SESSION['customer_user_id'] = $user['id'];
-            header("Location: ./customer dashboard/customer_dashboard.php"); // Redirect to customer dashboard
         }
-        exit();
     } else {
         $error = "Invalid username or password!";
     }

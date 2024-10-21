@@ -7,7 +7,7 @@ if (!isset($_SESSION['admin_user_id']) || $_SESSION['admin_role'] !== 'admin') {
     exit();
 }
 
-include 'sidebar.php'; 
+include 'sidebar.php';
 ?>
 
 <!DOCTYPE html>
@@ -18,6 +18,7 @@ include 'sidebar.php';
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>MAIN BRANCH ADMIN</title>
+
     <style>
         /* Global styles */
         body {
@@ -63,7 +64,10 @@ include 'sidebar.php';
             margin-right: auto; /* Centering form */
         }
 
-        input[type="file"] {
+        input[type="file"],
+        input[type="text"],
+        input[type="number"],
+        select {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ced4da;
@@ -150,6 +154,7 @@ include 'sidebar.php';
 
         <div id="alert"></div>
 
+        <!-- CSV Upload Form -->
         <form action="" method="post" enctype="multipart/form-data">
             <input type="file" name="csv_file" accept=".csv" required>
             <div style="text-align: center;">
@@ -173,6 +178,7 @@ include 'sidebar.php';
                 $_SESSION['csv_data'] = [];
             }
 
+            // Upload and process CSV file
             if (isset($_POST['upload'])) {
                 if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] === UPLOAD_ERR_OK) {
                     $file = fopen($_FILES['csv_file']['tmp_name'], 'r');
@@ -194,6 +200,7 @@ include 'sidebar.php';
                 }
             }
 
+            // Display uploaded data if present
             if (!empty($_SESSION['csv_data']) && !isset($_POST['upload'])) {
                 foreach ($_SESSION['csv_data'] as $row) {
                     echo '<tr>';
@@ -204,6 +211,7 @@ include 'sidebar.php';
                 }
             }
 
+            // Save to database
             if (isset($_POST['save']) && !empty($_SESSION['csv_data'])) {
                 $conn = new mysqli("localhost", "root", "", "dealership_shop");
 
@@ -242,26 +250,69 @@ include 'sidebar.php';
                     echo "<script>showAlert('Successfully saved $successful_inserts rows to the database!');</script>";
                 }
                 if (!empty($errors)) {
-                    echo "<script>showAlert('Errors occurred:<br>" . implode('<br>', $errors) . "');</script>";
+                    echo "<script>showAlert('Errors occurred: " . implode(', ', $errors) . "');</script>";
                 }
 
+                // Clear the session data after saving
                 unset($_SESSION['csv_data']);
                 $conn->close();
             }
+
+            // Modify product price
+            if (isset($_POST['modify_price'])) {
+                $selected_product = $_POST['product_name'];
+                $new_price = $_POST['new_price'];
+
+                // Update product price
+                $conn = new mysqli("localhost", "root", "", "dealership_shop");
+                if ($conn->connect_error) {
+                    die("Connection failed: " . $conn->connect_error);
+                }
+
+                $selected_product = $conn->real_escape_string($selected_product);
+                $new_price = $conn->real_escape_string($new_price);
+
+                $sql = "UPDATE products SET price = '$new_price' WHERE product_name = '$selected_product'";
+                if ($conn->query($sql) === TRUE) {
+                    echo "<script>showAlert('Successfully updated price for $selected_product!');</script>";
+                } else {
+                    echo "<script>showAlert('Error updating price: " . $conn->error . "');</script>";
+                }
+
+                $conn->close();
+            }
             ?>
+
         </table>
+
+        <!-- Modify Price Form -->
+        <form action="" method="post" style="margin-top: 20px;">
+            <h3>Modify Product Price</h3>
+            <select name="product_name" required>
+                <option value="" disabled selected>Select a product</option>
+                <?php
+                $conn = new mysqli("localhost", "root", "", "dealership_shop");
+                $result = $conn->query("SELECT product_name FROM products");
+                while ($row = $result->fetch_assoc()) {
+                    echo '<option value="' . htmlspecialchars($row['product_name']) . '">' . htmlspecialchars($row['product_name']) . '</option>';
+                }
+                $conn->close();
+                ?>
+            </select>
+            <input type="number" name="new_price" placeholder="New Price" step="0.01" required>
+            <button type="submit" name="modify_price">Modify Price</button>
+        </form>
     </div>
 
     <script>
         function showAlert(message) {
             const alertBox = document.getElementById('alert');
-            alertBox.innerHTML = message;
+            alertBox.textContent = message;
             alertBox.style.display = 'block';
             setTimeout(() => {
                 alertBox.style.display = 'none';
-            }, 5000);
+            }, 5000); // Alert disappears after 5 seconds
         }
     </script>
-
 </body>
 </html>

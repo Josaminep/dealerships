@@ -67,9 +67,10 @@
         <h2>Dashboard</h2>
         <ul>
             <li><a href='./admin_dashboard_final.php'>DASHBOARD</a></li>
-            <li><a href='./add_stocks_admin.php'>ADD STOCKS PER BRANCH</a></li>
-            <li><a href='./add_product5.php'>PRODUCTS</a></li>
+            <li><a href='./add_stocks_admin.php'>ADD STOCKS/PRODUCTS</a></li>
+            <li><a href='./admin_products.php'>PRODUCTS</a></li>
             <li><a href='./branch_records_admin.php'>COMPLETED ORDERS</a></li>
+            <li><a href='./add_branch_user.php'>ADD BRANCH USER</a></li>
             <li><a href="./logout.php">Logout</a></li>
         </ul>
     </div>
