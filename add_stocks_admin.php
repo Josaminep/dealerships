@@ -22,7 +22,7 @@ include 'sidebar.php';
         /* Global styles */
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #ffff; /* Light background for the body */
+            background-color: #f8f9fa; /* Light gray background for the body */
             color: #343a40;
             margin: 0;
             padding: 0;
@@ -34,23 +34,21 @@ include 'sidebar.php';
             padding: 20px;
             height: 100vh;
             box-sizing: border-box;
-            background-color: #ffffff; /* Clean white background */
-            border-left: 4px solid #007bff; /* Blue border for style */
         }
 
         /* Header styles */
-        h1 {
-            font-size: 32px;
-            color: #007bff;
+        .header {
+            background-color: #003366; /* Dark blue background */
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
             margin-bottom: 20px;
-            font-weight: bold;
-            padding: 20px;
-            border: 2px solid #007bff; /* Border around the header */
-            border-radius: 10px; /* Rounded corners */
-            background-color: #f8f9fa; /* Light background color for the header */
-            max-width: 600px; /* Optional: to limit header width */
-            margin: 0 auto 20px auto; /* Center the header */
+        }
+
+        h1 {
+            font-size: 28px;
+            color: white; /* White text for better contrast */
+            margin: 0;
         }
 
         /* Form styles */
@@ -114,7 +112,7 @@ include 'sidebar.php';
         }
 
         th {
-            background-color: #007bff;
+            background-color: #007bff; /* Table header color */
             color: white;
             text-transform: uppercase;
             font-weight: bold;
@@ -140,16 +138,6 @@ include 'sidebar.php';
             text-align: center;
             max-width: 600px;
             margin: 10px auto;
-        }
-
-        /* Additional design refinements */
-        .content .box {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #ffffff;
-            border: 1px solid #dedede;
-            border-radius: 8px;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for content box */
         }
     </style>
 </head>
