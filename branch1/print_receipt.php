@@ -4,24 +4,24 @@ require '../db.php'; // Include your database connection file
 
 // Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 1) {
-  
+    exit("Unauthorized access."); // Handle unauthorized access
 }
 
 // Get the receipt ID from the URL
-$receipt_id = $_GET['id'];
+$sale_id = $_GET['id']; // Assuming you meant sale_id instead of receipt_id
 
-// Fetch the receipt details
-$stmt = $db->prepare("SELECT r.id, r.receipt_details, r.created_at, s.total_price, p.product_name 
-                      FROM receipts r
-                      JOIN sales s ON r.sale_id = s.id
-                      JOIN products p ON s.product_id = p.id
-                      WHERE r.id = ?");
-$stmt->execute([$receipt_id]);
-$receipt = $stmt->fetch();
+// Fetch the sale details from the sales table
+$stmt = $db->prepare("SELECT id, product_id, product_name, price, sale_date, branch 
+                      FROM sales 
+                      WHERE id = ?");
+$stmt->execute([$sale_id]);
+$sale = $stmt->fetch(PDO::FETCH_ASSOC); // Fetch the data as an associative array
 
-if (!$receipt) {
-    die("Receipt not found.");
+// Debugging: Check if the sale was found
+if (!$sale) {
+    die("Sale not found for ID: " . htmlspecialchars($sale_id)); // Output the sale_id being searched for
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -29,7 +29,7 @@ if (!$receipt) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt #<?php echo $receipt['id']; ?></title>
+    <title>Sale Receipt #<?php echo $sale['id']; ?></title>
     <style>
         /* Simple styling for receipt */
         body {
@@ -42,15 +42,16 @@ if (!$receipt) {
             width: 300px;
             margin: auto;
         }
-      
     </style>
 </head>
 <body>
     <div class="receipt">
-        <h2>Receipt #<?php echo $receipt['id']; ?></h2>
-        <!-- <p><strong>Product:</strong> <?php echo $receipt['product_name']; ?></p> -->
-        <p><strong>List Of your </strong> <?php echo $receipt['receipt_details']; ?></p>
-        <p><strong>Date:</strong> <?php echo $receipt['created_at']; ?></p>
+        <h2>Sale Receipt #<?php echo $sale['id']; ?></h2>
+        <p><strong>Product ID:</strong> <?php echo htmlspecialchars($sale['product_id']); ?></p>
+        <p><strong>Product Name:</strong> <?php echo htmlspecialchars($sale['product_name']); ?></p>
+        <p><strong>Price:</strong> Php <?php echo number_format($sale['price'], 2); ?></p>
+        <p><strong>Sale Date:</strong> <?php echo htmlspecialchars($sale['sale_date']); ?></p>
+        <p><strong>Branch:</strong> <?php echo htmlspecialchars($sale['branch']); ?></p>
     </div>
 </body>
 </html>

@@ -123,6 +123,11 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background-color: #002855;
             transform: translateY(-3px);
         }
+        .search input {
+    padding: 6px;
+    border-radius: 4px;
+    border: none;
+}
     </style>
 </head>
 <body>
@@ -139,10 +144,11 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </nav>
         <div class="search">
             <input type="text" placeholder="Search...">
-        </div>
         <li class="logout-btn" type="button">
             <a class="log-out" href="../logout.php">Logout</a>
         </li>
+        </div>
+
     </header>
 
     <div class="card-container">

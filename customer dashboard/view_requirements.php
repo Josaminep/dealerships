@@ -26,12 +26,36 @@ if (!$product) {
     echo "No product found.";
     exit();
 }
+
+// Handle form submission to save to sales table
+$insertSuccess = false; // Initialize the success flag
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $product_id = $_POST['product_id'];
+    $product_name = $_POST['product_name'];
+    $price = $_POST['price'];
+    $branch = $_POST['branch'];
+
+    if (empty($errors)) {
+        // Insert the sales data into the sales table
+        $insertQuery = "INSERT INTO sales (product_id, product_name, price, branch) 
+                        VALUES (:id, :product_name, :price, :branch)";
+        $insertStmt = $pdo->prepare($insertQuery);
+
+        // Execute the query and check for success
+        $insertSuccess = $insertStmt->execute([
+            'id' => $product_id,
+            'product_name' => $product_name,
+            'price' => $price,
+            'branch' => $branch
+        ]);
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <base href="https://eversure.com/">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EverSure Motorcycle Purchase</title>
@@ -183,90 +207,50 @@ if (!$product) {
     <div class="branch-select">
         <select id="branch-dropdown">
             <option value="" disabled selected>Select Branch</option>
-            <option value="1">Branch 1</option>
-            <option value="2">Branch 2</option>
-            <option value="3">Branch 3</option>
-            <option value="4">Branch 4</option>
-            <option value="5">Branch 5</option>
+            <option value="Branch 1">Branch 1</option>
+            <option value="Branch 2">Branch 2</option>
+            <option value="Branch 3">Branch 3</option>
+            <option value="Branch 4">Branch 4</option>
+            <option value="Branch 5">Branch 5</option>
         </select>
     </div>
 
-        <div class="motorcycle-info">
-            <!-- Display the name and price here -->
-            <h2 id="motorcycle-name"><?php echo htmlspecialchars($product['product_name']); ?></h2>
-            <p id="motorcycle-price">PHP <?php echo number_format($product['price'], 2); ?></p>
-        </div>
+    <div class="motorcycle-info">
+        <!-- Display the name and price here -->
+        <h2 id="motorcycle-name"><?php echo htmlspecialchars($product['product_name']); ?></h2>
+        <p id="motorcycle-price">PHP <?php echo number_format($product['price'], 2); ?></p>
+    </div>
 
-        <div class="requirements">
-            <div class="requirement">
-                <span>I.D</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>TIN #</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>CEDULA</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>LICENSE</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>VALID ID'S</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>PROOF OF BILLING</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>BRGY. CLEARANCE</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>BIRTH CERTIFICATE</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-            <div class="requirement">
-                <span>MARRIAGE CONTRACT<br>(Optional)</span>
-                <button class="upload-btn">Upload</button>
-            </div>
-        </div>
+    <!-- Form to submit the purchase and upload requirements -->
+    <form action="" method="POST" enctype="multipart/form-data">
+        <!-- Hidden fields to send the product details -->
+        <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+        <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($product['product_name']); ?>">
+        <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
         
-        <button class="submit-btn">Submit</button>
+        <!-- Selected branch -->
+        <input type="hidden" name="branch" id="branch-input">
+
+        <!-- Your other form elements here -->
+
+        <button type="submit" class="submit-btn">Submit</button>
+    </form>
     </main>
 
     <script>
-        document.querySelectorAll('.upload-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        alert(`File "${file.name}" selected. Upload functionality would be implemented here.`);
-                        this.textContent = 'Uploaded';
-                        this.style.backgroundColor = '#4caf50';
-                    }
-                };
-                input.click();
-            });
-        });
-
-        document.getElementById('product-dropdown').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const price = selectedOption.getAttribute('data-price');
-            document.getElementById('motorcycle-price').textContent = `PHP ${price}`;
-        });
-
         document.getElementById('branch-dropdown').addEventListener('change', function() {
             const selectedBranch = this.value;
-            alert(`Selected branch: ${selectedBranch}`);
+            document.getElementById('branch-input').value = selectedBranch;
         });
+
+        // Show alert popup based on PHP response
+        <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+            <?php if ($insertSuccess): ?>
+                alert("Sale recorded successfully!");
+            <?php else: ?>
+                alert("Failed to record the sale.");
+            <?php endif; ?>
+        <?php endif; ?>
     </script>
 </body>
 </html>

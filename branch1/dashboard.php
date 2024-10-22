@@ -1,13 +1,11 @@
 <?php
 session_start();
-require '../db.php'; // Include your database connection file
+require '../db.php'; // Include your database connection fil
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 1) {
-    
+    // handle unauthorized access
 }
-
-
 
 // Check if admin is logged in
 
@@ -23,10 +21,10 @@ $this_week = date('Y-m-d', strtotime('-7 days'));
 $this_month = date('Y-m-01');
 $this_year = date('Y-01-01');
 
-$daily_income_query = $db->prepare("SELECT SUM(total_price) FROM sales WHERE sale_date >= ?");
-$weekly_income_query = $db->prepare("SELECT SUM(total_price) FROM sales WHERE sale_date >= ?");
-$monthly_income_query = $db->prepare("SELECT SUM(total_price) FROM sales WHERE sale_date >= ?");
-$yearly_income_query = $db->prepare("SELECT SUM(total_price) FROM sales WHERE sale_date >= ?");
+$daily_income_query = $db->prepare("SELECT SUM(price) FROM sales WHERE sale_date >= ?");
+$weekly_income_query = $db->prepare("SELECT SUM(price) FROM sales WHERE sale_date >= ?");
+$monthly_income_query = $db->prepare("SELECT SUM(price) FROM sales WHERE sale_date >= ?");
+$yearly_income_query = $db->prepare("SELECT SUM(price) FROM sales WHERE sale_date >= ?");
 
 $daily_income_query->execute([$today]);
 $weekly_income_query->execute([$this_week]);
@@ -42,13 +40,13 @@ $yearly_income = $yearly_income_query->fetchColumn() ?: 0;
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['reset_all'])) {
         // Reset daily, weekly, and monthly income
-        $db->exec("UPDATE sales SET total_price = 0 WHERE sale_date >= '$today'");
+        $db->exec("UPDATE sales SET price = 0 WHERE sale_date >= '$today'");
     } elseif (isset($_POST['reset_daily'])) {
-        $db->exec("UPDATE sales SET total_price = 0 WHERE sale_date >= '$today'");
+        $db->exec("UPDATE sales SET price = 0 WHERE sale_date >= '$today'");
     } elseif (isset($_POST['reset_weekly'])) {
-        $db->exec("UPDATE sales SET total_price = 0 WHERE sale_date >= '$this_week'");
+        $db->exec("UPDATE sales SET price = 0 WHERE sale_date >= '$this_week'");
     } elseif (isset($_POST['reset_monthly'])) {
-        $db->exec("UPDATE sales SET total_price = 0 WHERE sale_date >= '$this_month'");
+        $db->exec("UPDATE sales SET price = 0 WHERE sale_date >= '$this_month'");
     }
 
     // Re-fetch income values after reset
@@ -69,7 +67,7 @@ $monthly_labels = [];
 for ($i = 0; $i < 12; $i++) {
     $month_start = date('Y-m-01', strtotime("-$i months"));
     $month_label = date('M Y', strtotime("-$i months"));
-    $monthly_sales_query = $db->prepare("SELECT SUM(total_price) FROM sales WHERE sale_date >= ? AND sale_date < DATE_ADD(?, INTERVAL 1 MONTH)");
+    $monthly_sales_query = $db->prepare("SELECT SUM(price) FROM sales WHERE sale_date >= ? AND sale_date < DATE_ADD(?, INTERVAL 1 MONTH)");
     $monthly_sales_query->execute([$month_start, $month_start]);
     $monthly_sales[] = $monthly_sales_query->fetchColumn() ?: 0;
     $monthly_labels[] = $month_label;
@@ -83,7 +81,7 @@ $yearly_labels = [];
 for ($i = 0; $i < 5; $i++) {
     $year_start = date('Y-01-01', strtotime("-$i years"));
     $year_label = date('Y', strtotime("-$i years"));
-    $yearly_sales_query = $db->prepare("SELECT SUM(total_price) FROM sales WHERE sale_date >= ? AND sale_date < DATE_ADD(?, INTERVAL 1 YEAR)");
+    $yearly_sales_query = $db->prepare("SELECT SUM(price) FROM sales WHERE sale_date >= ? AND sale_date < DATE_ADD(?, INTERVAL 1 YEAR)");
     $yearly_sales_query->execute([$year_start, $year_start]);
     $yearly_sales[] = $yearly_sales_query->fetchColumn() ?: 0;
     $yearly_labels[] = $year_label;
@@ -122,23 +120,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_purchase'])) {
     $product = $product_query->fetch();
 
     // Add purchase to sales table
-    $total_price = 100; // example price, change accordingly
-    $insert_sale = $db->prepare("INSERT INTO sales (product_id, quantity, sale_date, total_price) VALUES (?, ?, ?, ?)");
-    $insert_sale->execute([$product_id, $quantity, date('Y-m-d'), $total_price]);
+    $price = 100; // example price, change accordingly
+    $insert_sale = $db->prepare("INSERT INTO sales (product_id, quantity, sale_date, price) VALUES (?, ?, ?, ?)");
+    $insert_sale->execute([$product_id, $quantity, date('Y-m-d'), $price]);
 
     // Log the activity
     log_activity($db, 'Purchase', "Purchased $quantity of '{$product['product_name']}'.");
 
     echo "Purchase successful.";
-
-
-
-
-
-
-
-
-
 
     // Handle adding a new product
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
@@ -181,6 +170,7 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -215,9 +205,6 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
             background-color: #f2f2f2;
         }
 
-
-
-
         * {
             margin: 0;
             padding: 0;
@@ -228,68 +215,12 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
             font-family: Arial, sans-serif;
             background-color: lightgrey;
         }
-
-        .sidebar {
-            width: 20%;
-            background-color: black;
-            height: 100vh;
-            position: fixed;
-            color: white;
-        }
-
-        .sidebar h2 {
-            font-size: 40px;
-            color: white;
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-            padding-top: 40px;
-        }
-
-        .sidebar ul {
-            list-style-type: none;
-            padding: 0;
-           
-        }
-
-        .sidebar ul li {
-            margin-bottom: 15px;
-            margin-top: 20px;
-        }
-
-        /* Button Link Styling */
-        .sidebar ul li a {
-            display: block;
-            padding: 20px;
-            background-color: #5cb85c;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-left: 20px;
-            margin-right: 20px;
-            
-        }
-
-        .sidebar ul li a:hover {
-            background-color: burlywood;
-        }
-
-        /* Special styling for logout button */
-        .sidebar ul li a[href="logout.php"] {
-            background-color: #d9534f;
-        }
-
-        .sidebar ul li a[href="logout.php"]:hover {
-            background-color: burlywood;
-        }
-
         .content {
-            margin-left: 20%;
-            padding: 20px;
-        }
+    flex-grow: 1; /* Allow content area to take remaining space */
+    padding: 20px;
+    margin-left: 250px; /* Set a left margin equal to the sidebar width */
+}
+
 
         .header {
             text-align: center;
@@ -431,18 +362,9 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
     </style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <h2>Dashboard</h2>
-        <ul>
-            <li><a id="viewProductsBtn" href='./view_products.php'>View Stock Products</a></li>
-            <li><a id="purchaseBtn" href='./purchase.php'>Pending Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./'>Completed Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./view_receipts.php'>Records of Sales</a></li>
-            <li><a href="../logout.php" >Logout</a></li>
-        </ul>
-    </div>
-
+<div class="sidebar">
+    <?php include 'sidebar.php'; // Sidebar content goes here ?>
+</div>
     <div class="content">
         <div class="header">
             <h1>SARI SARI INVENTORY SYSTEM</h1>
@@ -481,16 +403,7 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
 <body>
 
 
-   
-
-   
-
     <script>
-      
-
-
-
-
         const monthlyIncomeCtx = document.getElementById('monthlyIncomeChart').getContext('2d');
         const yearlyIncomeCtx = document.getElementById('yearlyIncomeChart').getContext('2d');
         const productStockCtx = document.getElementById('productStockChart').getContext('2d');
