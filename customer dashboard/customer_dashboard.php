@@ -6,6 +6,7 @@
     <title>Kawasaki Motors</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <style>
     body {
     font-family: 'Arial', sans-serif;
@@ -152,9 +153,8 @@ nav ul li:hover a {
     max-width: 100%;
     border-radius: 10px;
 }
-
-
 </style>
+
 <body>
     <header>
         <div class="logo">
@@ -163,7 +163,7 @@ nav ul li:hover a {
         <nav>
             <ul>
                 <li><a href="#" class="active">Home</a></li>
-                <li><a href="#">Shop</a></li>
+                <li><a href="./shop.php">Shop</a></li>
                 <li><a href="#">About</a></li>
             </ul>
         </nav>
