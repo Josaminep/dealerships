@@ -1,49 +1,3 @@
-<?php
-session_start();
-require 'db.php';
-
-include 'sidebar.php';
-
-if (!isset($_SESSION['admin_user_id']) || $_SESSION['admin_role'] !== 'admin') {
-    header("Location: login.php");
-    exit();
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get form data
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $branch_id = $_POST['branch_id'];
-    $role = 'staff'; // Default role for branch users
-
-    // Validate form data
-    if (!empty($username) && !empty($password) && !empty($branch_id)) {
-        // Hash the password
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        // Insert user into the database
-        $conn = new mysqli("localhost", "root", "", "dealership_shop");
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
-
-        $stmt = $conn->prepare("INSERT INTO users (username, password, role, branch_id) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("sssi", $username, $hashed_password, $role, $branch_id);
-
-        if ($stmt->execute()) {
-            echo "<script>alert('User added successfully!');</script>";
-        } else {
-            echo "<script>alert('Error: " . $stmt->error . "');</script>";
-        }
-
-        $stmt->close();
-        $conn->close();
-    } else {
-        echo "<script>alert('Please fill in all fields.');</script>";
-    }
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 20px;
             max-width: 600px;
             box-sizing: border-box;
+            margin-right: 300px;
         }
         .header {
             background-color: #003366;
@@ -70,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 10px;
             text-align: center;
             margin-bottom: 20px;
+            margin-top: 50px;
         }
         h1 {
             font-size: 28px;
@@ -79,37 +35,65 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         form {
             display: flex;
             flex-direction: column;
-            background-color: #ffffff; /* White background for the form */
+            background-color: #ffffff;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         label {
             margin-bottom: 5px;
-            font-weight: bold; /* Bold labels for clarity */
+            font-weight: bold;
         }
-        input {
+        input, select {
             padding: 10px;
             margin-bottom: 15px;
             border-radius: 5px;
             border: 1px solid #ced4da;
-            font-size: 16px; /* Consistent font size */
+            font-size: 16px;
         }
         button {
             padding: 10px;
-            background-color: #007bff;
+            background-color: #003366;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 16px; /* Consistent font size */
-            transition: background-color 0.3s; /* Smooth transition */
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 45%;
+            display: block;
+            margin: 0 auto;
         }
         button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+            background-color: #ebd72a;
+            color: black;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .password-strength {
+            height: 5px;
+            width: 200px; /* Shortened width */
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .password-strength-bar {
+            height: 5px;
+            border-radius: 5px;
+            transition: width 0.3s;
+            display: block;
+            margin-left: 20px; /* Slightly shifted left */
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            display: none; /* Hidden by default */
         }
     </style>
 </head>
+
+<?php include 'sidebar.php'; ?>
 
 <body>
     <div class="content">
@@ -117,18 +101,96 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h1>Add Branch User</h1>
         </div>
 
-        <form method="POST" action="">
-            <label for="username">Username:</label>
-            <input type="text" name="username" id="username" required>
+        <form id="userForm" method="POST" action="">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" name="username" id="username" required>
+            </div>
 
-            <label for="password">Password:</label>
-            <input type="password" name="password" id="password" required>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required oninput="checkPasswordStrength()">
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strength-bar"></div>
+                </div>
+                <span class="error" id="password-error">Password is too weak!</span>
+            </div>
 
-            <label for="branch_id">Branch ID:</label>
-            <input type="number" name="branch_id" id="branch_id" required>
+            <div class="form-group">
+                <label for="branch_id">Branch ID:</label>
+                <select name="branch_id" id="branch_id" required>
+                    <option value="" disabled selected>Select Branch ID</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
 
             <button type="submit">Add User</button>
         </form>
     </div>
+
+    <script>
+        let passwordStrength = 0; // Global variable to track password strength
+
+        function checkPasswordStrength() {
+            const password = document.getElementById('password').value;
+            const strengthBar = document.getElementById('strength-bar');
+            const errorText = document.getElementById('password-error');
+            passwordStrength = 0;
+
+            // Check the strength of the password
+            if (password.length >= 8) passwordStrength += 1;
+            if (/[A-Z]/.test(password)) passwordStrength += 1;
+            if (/[a-z]/.test(password)) passwordStrength += 1;
+            if (/[0-9]/.test(password)) passwordStrength += 1;
+            if (/[\W]/.test(password)) passwordStrength += 1;
+
+            // Update the strength bar and color
+            switch (passwordStrength) {
+                case 1:
+                    strengthBar.style.width = '20%';
+                    strengthBar.style.backgroundColor = 'red';
+                    break;
+                case 2:
+                    strengthBar.style.width = '40%';
+                    strengthBar.style.backgroundColor = 'orange';
+                    break;
+                case 3:
+                    strengthBar.style.width = '60%';
+                    strengthBar.style.backgroundColor = 'yellow';
+                    break;
+                case 4:
+                    strengthBar.style.width = '80%';
+                    strengthBar.style.backgroundColor = 'lightgreen';
+                    break;
+                case 5:
+                    strengthBar.style.width = '100%';
+                    strengthBar.style.backgroundColor = 'green';
+                    break;
+                default:
+                    strengthBar.style.width = '0%';
+                    strengthBar.style.backgroundColor = 'transparent';
+                    break;
+            }
+
+            // Show/hide error message
+            if (passwordStrength < 3) {
+                errorText.style.display = 'block';
+            } else {
+                errorText.style.display = 'none';
+            }
+        }
+
+        // Prevent form submission if password is weak
+        document.getElementById('userForm').addEventListener('submit', function(event) {
+            if (passwordStrength < 3) {
+                event.preventDefault();
+                alert("Please choose a stronger password.");
+            }
+        });
+    </script>
 </body>
 </html>
