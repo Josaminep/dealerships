@@ -2,14 +2,14 @@
 session_start();
 require '../db.php'; // Include your database connection file
 
-// Check if user is logged in and is staff from branch 1
+// Check if the user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 2) {
     // Redirect or handle unauthorized access
     exit("Unauthorized access.");
 }
 
-// Fetch sales data for branch 1
-$stmt = $db->prepare("SELECT id, product_id, product_name, price, sale_date, branch FROM sales WHERE branch = ?");
+// Fetch pending sales data for branch 1
+$stmt = $db->prepare("SELECT id, product_id, product_name, price, sale_date, branch FROM sales WHERE branch = ? AND status = 'pending'");
 $stmt->execute(['Branch 2']);
 $sales = $stmt->fetchAll();
 
@@ -126,12 +126,12 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
 
 <div class="content">
     <div>
-        <a href="dashboard2.php" class="go-back-button">
+        <a href="dashboard.php" class="go-back-button">
             <i class="fas fa-arrow-left"></i> Go Back
         </a>
     </div>
 
-    <h1>Pending Order</h1>
+    <h1>Pending Orders</h1>
 
     <table>
         <thead>
@@ -148,7 +148,7 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
         <tbody>
             <?php if (empty($sales)): ?>
                 <tr>
-                    <td colspan="7" style="text-align: center;">No sales records found.</td>
+                    <td colspan="7" style="text-align: center;">No pending sales records found.</td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($sales as $sale): ?>

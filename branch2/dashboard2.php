@@ -1,13 +1,14 @@
 <?php
 session_start();
-require '../db.php'; // Include your database connection fil
+require '../db.php'; // Include your database connection file
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 1) {
     // handle unauthorized access
 }
 
-// Check if admin is logged in
+// Specify the branch name for 'Branch 2'
+$branch = 'Branch 2';
 
 // Function to log activities
 function log_activity($db, $activity_type, $details) {
@@ -21,15 +22,15 @@ $this_week = date('Y-m-d', strtotime('-7 days'));
 $this_month = date('Y-m-01');
 $this_year = date('Y-01-01');
 
-$daily_income_query = $db->prepare("SELECT SUM(price) FROM sales2 WHERE sale_date2 >= ?");
-$weekly_income_query = $db->prepare("SELECT SUM(price) FROM sales2 WHERE sale_date2 >= ?");
-$monthly_income_query = $db->prepare("SELECT SUM(price) FROM sales2 WHERE sale_date2 >= ?");
-$yearly_income_query = $db->prepare("SELECT SUM(price) FROM sales2 WHERE sale_date2 >= ?");
+$daily_income_query = $db->prepare("SELECT SUM(price) FROM receipts WHERE sale_date >= ? AND branch = ?");
+$weekly_income_query = $db->prepare("SELECT SUM(price) FROM receipts WHERE sale_date >= ? AND branch = ?");
+$monthly_income_query = $db->prepare("SELECT SUM(price) FROM receipts WHERE sale_date >= ? AND branch = ?");
+$yearly_income_query = $db->prepare("SELECT SUM(price) FROM receipts WHERE sale_date >= ? AND branch = ?");
 
-$daily_income_query->execute([$today]);
-$weekly_income_query->execute([$this_week]);
-$monthly_income_query->execute([$this_month]);
-$yearly_income_query->execute([$this_year]);
+$daily_income_query->execute([$today, $branch]);
+$weekly_income_query->execute([$this_week, $branch]);
+$monthly_income_query->execute([$this_month, $branch]);
+$yearly_income_query->execute([$this_year, $branch]);
 
 $daily_income = $daily_income_query->fetchColumn() ?: 0;
 $weekly_income = $weekly_income_query->fetchColumn() ?: 0;
@@ -40,20 +41,20 @@ $yearly_income = $yearly_income_query->fetchColumn() ?: 0;
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['reset_all'])) {
         // Reset daily, weekly, and monthly income
-        $db->exec("UPDATE sales2 SET price = 0 WHERE sale_date2 >= '$today'");
+        $db->exec("UPDATE receipts SET price = 0 WHERE sale_date >= '$today' AND branch = '$branch'");
     } elseif (isset($_POST['reset_daily'])) {
-        $db->exec("UPDATE sales2 SET price = 0 WHERE sale_date2 >= '$today'");
+        $db->exec("UPDATE receipts SET price = 0 WHERE sale_date >= '$today' AND branch = '$branch'");
     } elseif (isset($_POST['reset_weekly'])) {
-        $db->exec("UPDATE sales2 SET price = 0 WHERE sale_date2 >= '$this_week'");
+        $db->exec("UPDATE receipts SET price = 0 WHERE sale_date >= '$this_week' AND branch = '$branch'");
     } elseif (isset($_POST['reset_monthly'])) {
-        $db->exec("UPDATE sales2 SET price = 0 WHERE sale_date2 >= '$this_month'");
+        $db->exec("UPDATE receipts SET price = 0 WHERE sale_date >= '$this_month' AND branch = '$branch'");
     }
 
     // Re-fetch income values after reset
-    $daily_income_query->execute([$today]);
-    $weekly_income_query->execute([$this_week]);
-    $monthly_income_query->execute([$this_month]);
-    $yearly_income_query->execute([$this_year]);
+    $daily_income_query->execute([$today, $branch]);
+    $weekly_income_query->execute([$this_week, $branch]);
+    $monthly_income_query->execute([$this_month, $branch]);
+    $yearly_income_query->execute([$this_year, $branch]);
 
     $daily_income = $daily_income_query->fetchColumn() ?: 0;
     $weekly_income = $weekly_income_query->fetchColumn() ?: 0;
@@ -61,17 +62,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $yearly_income = $yearly_income_query->fetchColumn() ?: 0;
 }
 
-// Fetch monthly income for the past 12 months dynamically
 $monthly_sales = [];
 $monthly_labels = [];
+
 for ($i = 0; $i < 12; $i++) {
-    $month_start = date('Y-m-01', strtotime("-$i months"));
-    $month_label = date('M Y', strtotime("-$i months"));
-    $monthly_sales_query = $db->prepare("SELECT SUM(price) FROM sales2 WHERE sale_date2 >= ? AND sale_date2 < DATE_ADD(?, INTERVAL 1 MONTH)");
-    $monthly_sales_query->execute([$month_start, $month_start]);
+    // Create a new DateTime object for each iteration
+    $current_date = new DateTime();
+    
+    // Start and end of the month
+    $month_start = $current_date->modify("-$i months")->format('Y-m-01');
+    $month_end = $current_date->modify('+1 month')->format('Y-m-01');
+
+    // Label for the month (e.g., 'Oct 2023')
+    $month_label = date('M Y', strtotime($month_start));
+
+    // Query to sum sales for the month where branch is 'Branch 2'
+    $monthly_sales_query = $db->prepare("
+        SELECT SUM(price) 
+        FROM receipts 
+        WHERE sale_date >= ? 
+        AND sale_date < ? 
+        AND branch = '$branch'
+    ");
+    $monthly_sales_query->execute([$month_start, $month_end]);
+
+    // Fetch the result and add to the array
     $monthly_sales[] = $monthly_sales_query->fetchColumn() ?: 0;
     $monthly_labels[] = $month_label;
 }
+
+// Reverse the arrays to get the months in chronological order
 $monthly_sales = array_reverse($monthly_sales);
 $monthly_labels = array_reverse($monthly_labels);
 
@@ -81,7 +101,7 @@ $yearly_labels = [];
 for ($i = 0; $i < 5; $i++) {
     $year_start = date('Y-01-01', strtotime("-$i years"));
     $year_label = date('Y', strtotime("-$i years"));
-    $yearly_sales_query = $db->prepare("SELECT SUM(price) FROM sales2 WHERE sale_date2 >= ? AND sale_date2 < DATE_ADD(?, INTERVAL 1 YEAR)");
+    $yearly_sales_query = $db->prepare("SELECT SUM(price) FROM receipts WHERE sale_date >= ? AND sale_date < DATE_ADD(?, INTERVAL 1 YEAR) AND branch = '$branch'");
     $yearly_sales_query->execute([$year_start, $year_start]);
     $yearly_sales[] = $yearly_sales_query->fetchColumn() ?: 0;
     $yearly_labels[] = $year_label;
@@ -90,7 +110,7 @@ $yearly_sales = array_reverse($yearly_sales);
 $yearly_labels = array_reverse($yearly_labels);
 
 // Fetch product stock levels
-$product_stocks = $db->query("SELECT product_name, stock FROM products")->fetchAll(PDO::FETCH_ASSOC);
+$product_stocks = $db->query("SELECT product_name, stock FROM products ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch activity log records
 $activity_log_query = $db->query("SELECT * FROM activity_log ORDER BY activity_time DESC LIMIT 20");
@@ -102,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $stock = $_POST['stock'];
 
     // Add product to the database
-    $query = $db->prepare("INSERT INTO products (product_name, stock) VALUES (?, ?)");
+    $query = $db->prepare("INSERT INTO products (product_name, stock, branch) VALUES (?, ?, '$branch')");
     $query->execute([$product_name, $stock]);
 
     // Log the activity
@@ -115,25 +135,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_purchase'])) {
     $quantity = $_POST['quantity'];
 
     // Fetch product info
-    $product_query = $db->prepare("SELECT product_name FROM products WHERE id = ?");
+    $product_query = $db->prepare("SELECT product_name FROM products WHERE id = ? AND branch = '$branch'");
     $product_query->execute([$product_id]);
     $product = $product_query->fetch();
-
-    // Add purchase to sales table
-    $price = 100; // example price, change accordingly
-    $insert_sale = $db->prepare("INSERT INTO sales (product_id, quantity, sale_date, price) VALUES (?, ?, ?, ?)");
-    $insert_sale->execute([$product_id, $quantity, date('Y-m-d'), $price]);
-
-    // Log the activity
-    log_activity($db, 'Purchase', "Purchased $quantity of '{$product['product_name']}'.");
-
-    echo "Purchase successful.";
-
-
-// Fetch all products for the stock addition and price modification
-$products = $db->query("SELECT * FROM products")->fetchAll();
 }
+
 ?>
+
+
 
 
 <!DOCTYPE html>
@@ -142,7 +151,7 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>INVENTORY 1</title>
+    <title>BRANCH 1</title>
     <style>
 
 .chart-container {
@@ -179,15 +188,15 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
         body {
             font-family: Arial, sans-serif;
             background-color: lightgrey;
+            margin: 0;
+            display: flex; /* Use flexbox for layout */
         }
         .content {
-    flex-grow: 1; /* Allow content area to take remaining space */
-    padding: 20px;
-    margin-left: 250px; /* Set a left margin equal to the sidebar width */
-}
-
-
-        .header {
+            flex-grow: 1; /* Allow content area to take remaining space */
+            padding: 20px;
+            margin-left: 250px; /* Set a left margin equal to the sidebar width */
+        }
+            .header {
             text-align: center;
             padding: 20px 0;
             background-color: #fff;
@@ -211,6 +220,10 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
             align-items: center;
             font-size: 24px;
             color: #666;
+            margin-left: 25px; /* Set a left margin equal to the sidebar width */
+            padding: 20px;
+            flex-grow: 1; /* Allow content area to take remaining space */
+
         }
 
         /* Modal styling */
@@ -260,37 +273,37 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
         }
 
         .reset-button {
-        padding: 10px 15px;
-        margin: 10px; /* Adds space between buttons */
-        border: none;
-        border-radius: 5px; /* Rounded corners */
-        color: white;
-        cursor: pointer;
-        transition: background-color 0.3s;
-         /* Smooth transition for hover effect */
-    }
-    .reset-button:nth-child(1) {
-        background-color: #4CAF50; /* Green for daily reset */
-    }
-    .reset-button:nth-child(2) {
-        background-color: #2196F3; /* Blue for weekly reset */
-    }
-    .reset-button:nth-child(3) {
-        background-color: #FF9800; /* Orange for monthly reset */
-    }
-    .reset-button:nth-child(4) {
-        background-color: #f44336; /* Red for all reset */
-    }
-    .reset-button:hover {
-        opacity: 0.8; /* Slightly transparent on hover */
-    }
-   
-    .reset{
-        position: relative;
-        right: 195px;
-        top: 50px;
+            padding: 10px 15px;
+            margin: 2; /* Adds space between buttons */
+            margin-top: 5px; /* Adds space between buttons */
+            border: none;
+            border-radius: 10px; /* Rounded corners */
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s; /* Smooth transition for hover effect */
+            display: inline-block; /* Display inline for better alignment */
+        }
+        .reset-button:nth-child(1) {
+            background-color: #4CAF50; /* Green for daily reset */
+        }
+        .reset-button:nth-child(2) {
+            background-color: #2196F3; /* Blue for weekly reset */
+        }
+        .reset-button:nth-child(3) {
+            background-color: #FF9800; /* Orange for monthly reset */
+        }
+        .reset-button:nth-child(4) {
+            background-color: #f44336; /* Red for all reset */
+        }
+        .reset-button:hover {
+            opacity: 0.8; /* Slightly transparent on hover */
+        }
         
-    }
+        .reset-buttons-container {
+            display: flex;
+            justify-content: center; /* Center buttons */
+            margin-top: 20px; /* Add spacing above the buttons */
+        }
 
     .count {
         background-color: #f8f9fa; /* Light background */
@@ -444,8 +457,4 @@ $products = $db->query("SELECT * FROM products")->fetchAll();
     </script>
 
 </body>
-
 </html>
-
-
-

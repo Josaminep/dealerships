@@ -46,14 +46,11 @@ if ($search) {
             margin: 0;
             display: flex; /* Use flexbox for layout */
         }
-
-
-
         /* Main content styles */
         .main-content {
             flex-grow: 1; /* Allow content area to take remaining space */
-    padding: 20px;
-    margin-left: 250px; /* Set a left margin equal to the sidebar width */
+            padding: 20px;
+            margin-left: 250px; /* Set a left margin equal to the sidebar width */
             border: 3px solid black;
         }
 

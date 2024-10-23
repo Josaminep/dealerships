@@ -10,7 +10,7 @@ if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' ||
 
 // Fetch sales data for branch 1
 $stmt = $db->prepare("SELECT id, product_name, price, sale_date, branch FROM receipts WHERE branch = ? AND status = ?");
-$stmt->execute(['Branch 1', 'pending']);
+$stmt->execute(['Branch 1', 'done']);
 $sales = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch as an associative array
 
 ?>
@@ -179,32 +179,34 @@ $sales = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch as an associative array
         }
 
         function markAsDone(saleId) {
-            if (confirm("Are you sure you want to mark this order as done?")) {
-                // AJAX request to update the status in the database
-                fetch('update_sale_status.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ id: saleId, status: 'done' })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        // Remove the row from the table
-                        const row = document.getElementById(`row_${saleId}`);
-                        if (row) {
-                            row.remove();
-                        }
-                    } else {
-                        alert('Failed to update the sale status. Please try again.');
+        if (confirm("Are you sure you want to mark this order as completed?")) {
+            // AJAX request to update the status in the database
+            fetch('update_sale_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: saleId, status: 'completed' })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove the row from the table
+                    const row = document.getElementById(`row_${saleId}`);
+                    if (row) {
+                        row.remove();
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while processing your request.');
-                });
-            }
+                } else {
+                    alert('Failed to update the sale status. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            });
         }
+    }
+</script>
+
     </script>
 </div>
 </body>

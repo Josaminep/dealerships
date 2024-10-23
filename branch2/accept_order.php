@@ -3,7 +3,7 @@ session_start();
 require '../db.php'; // Include your database connection file
 
 // Check if the user is logged in and is staff from branch 1
-if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 1) {
+if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 2) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
     exit();
 }
