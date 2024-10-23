@@ -3,7 +3,7 @@ session_start();
 require '../db.php'; // Include your database connection file
 
 // Check if user is logged in and is staff
-if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 1) {
+if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 2) {
     // handle unauthorized access
 }
 
@@ -196,21 +196,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_purchase'])) {
             padding: 20px;
             margin-left: 250px; /* Set a left margin equal to the sidebar width */
         }
-            .header {
+        .header {
             text-align: center;
             padding: 20px 0;
-            background-color: #fff;
+            background-color: #00203f;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            margin-top: -20px;
         }
-
         .header h1 {
             color: black;
             font-size: 24px;
-            border: 3px solid #a76df0;
+            border: 2px solid #a76df0;
             display: inline-block;
             padding: 5px 15px;
+            color: white;
         }
-
         .main-content {
             background-color: #e0e0e0;
             height: 500px;
@@ -304,39 +305,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_purchase'])) {
             justify-content: center; /* Center buttons */
             margin-top: 20px; /* Add spacing above the buttons */
         }
+        .count {
+            background-color: #f8f9fa; /* Light background */
+            border: 1px solid #ccc; /* Light border */
+            border-radius: 8px; /* Rounded corners */
+            padding: 20px; /* Inner spacing */
+            margin: 20px 0; /* Outer spacing */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+            position: relative;
+        }
 
-    .count {
-        background-color: #f8f9fa; /* Light background */
-        border: 1px solid #ccc; /* Light border */
-        border-radius: 8px; /* Rounded corners */
-        padding: 20px; /* Inner spacing */
-        margin: 20px 0; /* Outer spacing */
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-        position: relative;
-    }
+        .count p {
+            font-size: 18px; /* Font size */
+            color: #333; /* Text color */
+            margin: 10px 0; /* Spacing between paragraphs */
+        }
 
-    .count p {
-        font-size: 18px; /* Font size */
-        color: #333; /* Text color */
-        margin: 10px 0; /* Spacing between paragraphs */
-    }
+        .count p:first-child {
+            font-weight: bold; /* Bold for the first income */
+            color: #4CAF50; /* Green color for daily income */
+        }
 
-    .count p:first-child {
-        font-weight: bold; /* Bold for the first income */
-        color: #4CAF50; /* Green color for daily income */
-    }
+        .count p:nth-child(2) {
+            color: #2196F3; /* Blue for weekly income */
+        }
 
-    .count p:nth-child(2) {
-        color: #2196F3; /* Blue for weekly income */
-    }
+        .count p:nth-child(3) {
+            color: #FF9800; /* Orange for monthly income */
+        }
 
-    .count p:nth-child(3) {
-        color: #FF9800; /* Orange for monthly income */
-    }
-
-    .count p:nth-child(4) {
-        color: #f44336; /* Red for yearly income */
-    }
+        .count p:nth-child(4) {
+            color: #f44336; /* Red for yearly income */
+        }
     </style>
 </head>
 <body>
@@ -354,12 +354,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_purchase'])) {
         <canvas id="monthlyIncomeChart"></canvas>
         <canvas id="yearlyIncomeChart"></canvas>
         <canvas id="productStockChart"></canvas>
-<div class="count">
-    <p>Daily Income: Php <?php echo number_format($daily_income, 2); ?></p>
-    <p>Weekly Income: Php <?php echo number_format($weekly_income, 2); ?></p>
-    <p>Monthly Income: Php <?php echo number_format($monthly_income, 2); ?></p>
-    <p>Yearly Income: Php <?php echo number_format($yearly_income, 2); ?></p>
-</div>
+            <div class="count">
+                <p>Daily Income: Php <?php echo number_format($daily_income, 2); ?></p>
+                <p>Weekly Income: Php <?php echo number_format($weekly_income, 2); ?></p>
+                <p>Monthly Income: Php <?php echo number_format($monthly_income, 2); ?></p>
+                <p>Yearly Income: Php <?php echo number_format($yearly_income, 2); ?></p>
+            </div>
         <div class="reset">
     <form method="POST">
     <button type="submit" name="reset_daily" class="reset-button">Reset Daily Income</button>

@@ -46,14 +46,11 @@ if ($search) {
             margin: 0;
             display: flex; /* Use flexbox for layout */
         }
-
-
-
         /* Main content styles */
         .main-content {
             flex-grow: 1; /* Allow content area to take remaining space */
-    padding: 20px;
-    margin-left: 250px; /* Set a left margin equal to the sidebar width */
+            padding: 20px;
+            margin-left: 250px; /* Set a left margin equal to the sidebar width */
             border: 3px solid black;
         }
 
@@ -96,9 +93,10 @@ if ($search) {
 
         /* Table Styles */
         table {
-            width: 100%;
+            width: 95%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
+            margin-left: 45px;
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
