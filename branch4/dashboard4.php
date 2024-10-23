@@ -1,15 +1,17 @@
 <?php
 session_start();
-require '../db.php'; // Include your database connection file
+require '../db.php'; // Include your database connection fil
 
-// Check if user is logged in and is staff from branch 1
+// Check if user is logged in and is staff
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 4) {
-  
-} 
+    // handle unauthorized access
+}
 
+// Check if admin is logged in
 
+// Function to log activities
 function log_activity($db, $activity_type, $details) {
-    $query = $db->prepare("INSERT INTO activity_log4 (activity_type4, details4) VALUES (?, ?)");
+    $query = $db->prepare("INSERT INTO activity_log (activity_type, details) VALUES (?, ?)");
     $query->execute([$activity_type, $details]);
 }
 
@@ -19,10 +21,10 @@ $this_week = date('Y-m-d', strtotime('-7 days'));
 $this_month = date('Y-m-01');
 $this_year = date('Y-01-01');
 
-$daily_income_query = $db->prepare("SELECT SUM(total_price4) FROM sales4 WHERE sale_date4 >= ?");
-$weekly_income_query = $db->prepare("SELECT SUM(total_price4) FROM sales4 WHERE sale_date4 >= ?");
-$monthly_income_query = $db->prepare("SELECT SUM(total_price4) FROM sales4 WHERE sale_date4 >= ?");
-$yearly_income_query = $db->prepare("SELECT SUM(total_price4) FROM sales4 WHERE sale_date4 >= ?");
+$daily_income_query = $db->prepare("SELECT SUM(price) FROM sales4 WHERE sale_date4 >= ?");
+$weekly_income_query = $db->prepare("SELECT SUM(price) FROM sales4 WHERE sale_date4 >= ?");
+$monthly_income_query = $db->prepare("SELECT SUM(price) FROM sales4 WHERE sale_date4 >= ?");
+$yearly_income_query = $db->prepare("SELECT SUM(price) FROM sales4 WHERE sale_date4 >= ?");
 
 $daily_income_query->execute([$today]);
 $weekly_income_query->execute([$this_week]);
@@ -38,13 +40,13 @@ $yearly_income = $yearly_income_query->fetchColumn() ?: 0;
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['reset_all'])) {
         // Reset daily, weekly, and monthly income
-        $db->exec("UPDATE sales4 SET total_price4 = 0 WHERE sale_date4 >= '$today'");
+        $db->exec("UPDATE sales4 SET price = 0 WHERE sale_date4 >= '$today'");
     } elseif (isset($_POST['reset_daily'])) {
-        $db->exec("UPDATE sales4 SET total_price4 = 0 WHERE sale_date4 >= '$today'");
+        $db->exec("UPDATE sales4 SET price = 0 WHERE sale_date4 >= '$today'");
     } elseif (isset($_POST['reset_weekly'])) {
-        $db->exec("UPDATE sales4 SET total_price4 = 0 WHERE sale_date4 >= '$this_week'");
+        $db->exec("UPDATE sales4 SET price = 0 WHERE sale_date4 >= '$this_week'");
     } elseif (isset($_POST['reset_monthly'])) {
-        $db->exec("UPDATE sales4 SET total_price4 = 0 WHERE sale_date4 >= '$this_month'");
+        $db->exec("UPDATE sales4 SET price = 0 WHERE sale_date4 >= '$this_month'");
     }
 
     // Re-fetch income values after reset
@@ -65,7 +67,7 @@ $monthly_labels = [];
 for ($i = 0; $i < 12; $i++) {
     $month_start = date('Y-m-01', strtotime("-$i months"));
     $month_label = date('M Y', strtotime("-$i months"));
-    $monthly_sales_query = $db->prepare("SELECT SUM(total_price4) FROM sales4 WHERE sale_date4 >= ? AND sale_date4 < DATE_ADD(?, INTERVAL 1 MONTH)");
+    $monthly_sales_query = $db->prepare("SELECT SUM(price) FROM sales4 WHERE sale_date4 >= ? AND sale_date4 < DATE_ADD(?, INTERVAL 1 MONTH)");
     $monthly_sales_query->execute([$month_start, $month_start]);
     $monthly_sales[] = $monthly_sales_query->fetchColumn() ?: 0;
     $monthly_labels[] = $month_label;
@@ -79,7 +81,7 @@ $yearly_labels = [];
 for ($i = 0; $i < 5; $i++) {
     $year_start = date('Y-01-01', strtotime("-$i years"));
     $year_label = date('Y', strtotime("-$i years"));
-    $yearly_sales_query = $db->prepare("SELECT SUM(total_price4) FROM sales4 WHERE sale_date4 >= ? AND sale_date4 < DATE_ADD(?, INTERVAL 1 YEAR)");
+    $yearly_sales_query = $db->prepare("SELECT SUM(price) FROM sales4 WHERE sale_date4 >= ? AND sale_date4 < DATE_ADD(?, INTERVAL 1 YEAR)");
     $yearly_sales_query->execute([$year_start, $year_start]);
     $yearly_sales[] = $yearly_sales_query->fetchColumn() ?: 0;
     $yearly_labels[] = $year_label;
@@ -88,28 +90,23 @@ $yearly_sales = array_reverse($yearly_sales);
 $yearly_labels = array_reverse($yearly_labels);
 
 // Fetch product stock levels
-$product_stocks = $db->query("SELECT product_name4, stock4 FROM products4")->fetchAll(PDO::FETCH_ASSOC);
+$product_stocks = $db->query("SELECT product_name, stock FROM products")->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch activity log records
-$activity_log_query = $db->query("SELECT * FROM activity_log4 ORDER BY activity_time4 DESC LIMIT 20");
+$activity_log_query = $db->query("SELECT * FROM activity_log ORDER BY activity_time DESC LIMIT 20");
 $activity_log = $activity_log_query->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle adding a new product
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_product'])) {
     $product_name = $_POST['product_name'];
-    $price = $_POST['price'];
-    $quantity = $_POST['quantity'];
-    $brand = $_POST['brand'];
     $stock = $_POST['stock'];
 
     // Add product to the database
-    $query = $db->prepare("INSERT INTO products2 (product_name4, price4, quantity4, brand4, stock4) VALUES (?, ?, ?, ?, ?)");
-    $query->execute([$product_name, $price, $quantity, $brand, $stock]);
+    $query = $db->prepare("INSERT INTO products (product_name, stock) VALUES (?, ?)");
+    $query->execute([$product_name, $stock]);
 
     // Log the activity
     log_activity($db, 'Product Added', "Product '$product_name' was added with stock $stock.");
-
-    echo "Product added successfully!";
 }
 
 // Handle purchase
@@ -118,24 +115,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['make_purchase'])) {
     $quantity = $_POST['quantity'];
 
     // Fetch product info
-    $product_query = $db->prepare("SELECT product_name4 FROM products3 WHERE id4 = ?");
+    $product_query = $db->prepare("SELECT product_name FROM products WHERE id = ?");
     $product_query->execute([$product_id]);
     $product = $product_query->fetch();
 
-    // Example price - this should be fetched based on the product price
-    $price_query = $db->prepare("SELECT price4 FROM products4 WHERE id4 = ?");
-    $price_query->execute([$product_id]);
-    $product_price = $price_query->fetchColumn();
-
     // Add purchase to sales table
-    $total_price = $product_price * $quantity;
-    $insert_sale = $db->prepare("INSERT INTO sales3 (product_id4, quantity_sold4, sale_date4, total_price4) VALUES (?, ?, ?, ?)");
-    $insert_sale->execute([$product_id, $quantity, date('Y-m-d'), $total_price]);
+    $price = 100; // example price, change accordingly
+    $insert_sale = $db->prepare("INSERT INTO sales (product_id, quantity, sale_date, price) VALUES (?, ?, ?, ?)");
+    $insert_sale->execute([$product_id, $quantity, date('Y-m-d'), $price]);
 
     // Log the activity
-    log_activity($db, 'Purchase', "Purchased $quantity of '{$product['product_name3']}'.");
+    log_activity($db, 'Purchase', "Purchased $quantity of '{$product['product_name']}'.");
 
     echo "Purchase successful.";
+
+    // Handle adding a new product
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
+    $product_name = $_POST['product_name'];
+    $price = $_POST['price'];
+    $quantity = $_POST['quantity'];
+    $brand = $_POST['brand'];
+    $stock = $_POST['stock'];
+
+    $stmt = $db->prepare("INSERT INTO products (product_name, price, quantity, brand, stock) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$product_name, $price, $quantity, $brand, $stock]);
+
+    echo "Product added successfully!";
 }
 
 // Handle adding stock to an existing product
@@ -143,11 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_stock'])) {
     $product_id = $_POST['product_id'];
     $additional_stock = $_POST['additional_stock'];
 
-    $stmt = $db->prepare("UPDATE products4 SET stock4 = stock4 + ? WHERE id4 = ?");
+    $stmt = $db->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
     $stmt->execute([$additional_stock, $product_id]);
-
-    // Log the activity
-    log_activity($db, 'Stock Added', "Added $additional_stock stock to product ID $product_id.");
 
     echo "Stock added successfully!";
 }
@@ -157,19 +159,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['modify_price'])) {
     $product_id = $_POST['product_id'];
     $new_price = $_POST['new_price'];
 
-    $stmt = $db->prepare("UPDATE products4 SET price4 = ? WHERE id4 = ?");
+    $stmt = $db->prepare("UPDATE products SET price = ? WHERE id = ?");
     $stmt->execute([$new_price, $product_id]);
-
-    // Log the activity
-    log_activity($db, 'Price Modified', "Updated price of product ID $product_id to $new_price.");
 
     echo "Price updated successfully!";
 }
 
 // Fetch all products for the stock addition and price modification
-$products = $db->query("SELECT * FROM products3")->fetchAll();
-
+$products = $db->query("SELECT * FROM products")->fetchAll();
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -177,7 +177,7 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>BRANCH 4</title>
+    <title>INVENTORY 1</title>
     <style>
 
 .chart-container {
@@ -205,9 +205,6 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
             background-color: #f2f2f2;
         }
 
-
-
-
         * {
             margin: 0;
             padding: 0;
@@ -218,68 +215,12 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
             font-family: Arial, sans-serif;
             background-color: lightgrey;
         }
-
-        .sidebar {
-            width: 20%;
-            background-color: black;
-            height: 100vh;
-            position: fixed;
-            color: white;
-        }
-
-        .sidebar h2 {
-            font-size: 40px;
-            color: white;
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-            padding-top: 40px;
-        }
-
-        .sidebar ul {
-            list-style-type: none;
-            padding: 0;
-           
-        }
-
-        .sidebar ul li {
-            margin-bottom: 15px;
-            margin-top: 20px;
-        }
-
-        /* Button Link Styling */
-        .sidebar ul li a {
-            display: block;
-            padding: 20px;
-            background-color: #5cb85c;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-left: 20px;
-            margin-right: 20px;
-            
-        }
-
-        .sidebar ul li a:hover {
-            background-color: burlywood;
-        }
-
-        /* Special styling for logout button */
-        .sidebar ul li a[href="logout.php"] {
-            background-color: #d9534f;
-        }
-
-        .sidebar ul li a[href="logout.php"]:hover {
-            background-color: burlywood;
-        }
-
         .content {
-            margin-left: 20%;
-            padding: 20px;
-        }
+    flex-grow: 1; /* Allow content area to take remaining space */
+    padding: 20px;
+    margin-left: 250px; /* Set a left margin equal to the sidebar width */
+}
+
 
         .header {
             text-align: center;
@@ -421,18 +362,9 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
     </style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <h2>Dashboard</h2>
-        <ul>
-            <li><a id="viewProductsBtn" href='./view_products4.php'>View Stock Products</a></li>
-            <li><a id="purchaseBtn" href='./purchase4.php'>Pending Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./'>Completed Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./view_receipts4.php'>Records of Sales</a></li>
-            <li><a href="../logout.php" >Logout</a></li>
-        </ul>
-    </div>
-
+<div class="sidebar">
+    <?php include 'sidebar.php'; // Sidebar content goes here ?>
+</div>
     <div class="content">
         <div class="header">
             <h1>SARI SARI INVENTORY SYSTEM</h1>
@@ -468,18 +400,10 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
     </div>
 
     
+<body>
 
-
-   
-
-   
 
     <script>
-      
-
-
-
-
         const monthlyIncomeCtx = document.getElementById('monthlyIncomeChart').getContext('2d');
         const yearlyIncomeCtx = document.getElementById('yearlyIncomeChart').getContext('2d');
         const productStockCtx = document.getElementById('productStockChart').getContext('2d');
@@ -529,8 +453,8 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
         });
 
         // Product Stock Chart
-        const productLabels = <?php echo json_encode(array_column($product_stocks, 'product_name4')); ?>;
-        const productStocks = <?php echo json_encode(array_column($product_stocks, 'stock4')); ?>;
+        const productLabels = <?php echo json_encode(array_column($product_stocks, 'product_name')); ?>;
+        const productStocks = <?php echo json_encode(array_column($product_stocks, 'stock')); ?>;
 
         const productStockChart = new Chart(productStockCtx, {
             type: 'bar',

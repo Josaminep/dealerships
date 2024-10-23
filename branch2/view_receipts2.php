@@ -4,35 +4,23 @@ require '../db.php'; // Include your database connection file
 
 // Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 2) {
- 
+    // Redirect or handle unauthorized access
+    exit("Unauthorized access.");
 }
 
-// Handle receipt deletion
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_receipt'])) {
-    $receipt_id = $_POST['receipt_id'];
-    $delete_query = $db->prepare("DELETE FROM receipts2 WHERE id2 = ?");
-    $delete_query->execute([$receipt_id]);
+// Fetch sales data for branch 1 with status = 'done'
+$stmt = $db->prepare("SELECT id, product_name, price, sale_date, branch FROM receipts WHERE branch = ? AND status = ?");
+$stmt->execute(['Branch 2', 'done']);
+$sales = $stmt->fetchAll();
 
-    // Log the activity
-    log_activity($db, 'Receipt Deleted', "Receipt with ID $receipt_id has been deleted.");
-    echo "Receipt deleted successfully.";
+// Initialize total price variable
+$totalPrice = 0;
+
+// Calculate total price
+foreach ($sales as $sale) {
+    $totalPrice += $sale['price']; // Add each sale's price to total
 }
-
-// Function to log activities
-function log_activity($db, $activity_type, $details) {
-    $query = $db->prepare("INSERT INTO activity_log2 (activity_type2, details2) VALUES (?, ?)");
-    $query->execute([$activity_type, $details]);
-}
-
-// Fetch all receipts
-$receipts = $db->query("SELECT r.id2, r.receipt_details2, r.created_at2, s.total_price2, p.product_name2 
-                        FROM receipts2 r
-                        JOIN sales2 s ON r.sale_id2 = s.id2
-                        JOIN products2 p ON s.product_id2 = p.id2
-                        ORDER BY r.created_at2 DESC")->fetchAll();
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -40,63 +28,50 @@ $receipts = $db->query("SELECT r.id2, r.receipt_details2, r.created_at2, s.total
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-
-    <title>Receipts</title>
+    
+    <title>Sales Records</title>
     <style>
         body {
-            background-color: white; /* Light grey background */
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
+            display: flex;
+        }
+        .content {
+            flex-grow: 1;
             padding: 20px;
+            margin-left: 250px;
+            border: 3px solid black;
         }
         h1 {
-            color: black;
             text-align: center;
+            color: #333;
+            margin-bottom: 30px;
         }
         table {
-            width: 100%;
+            width: 80%;
+            margin: 20px auto;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: white;
         }
-        th, td {
-            padding: 10px;
-            text-align: left;
+        table, th, td {
             border: 1px solid #ccc;
         }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
         th {
-            background-color: #e0e0e0; /* Slightly darker grey for header */
+            background-color: #eaeaea;
+            color: #333;
         }
         tr:nth-child(even) {
-            background-color: #f9f9f9; /* Zebra striping for better readability */
+            background-color: #f9f9f9;
         }
-        .print-button, .delete-button {
-            margin-left: 10px;
-            padding: 5px 10px;
-            cursor: pointer;
-            border: none;
-            color: white;
-            border-radius: 4px; /* Rounded corners */
+        tr:hover {
+            background-color: #f1f1f1;
         }
-        .print-button {
-            background-color: #4CAF50; /* Green */
-        }
-        .delete-button {
-            background-color: #f44336; /* Red */
-        }
-        .go-back-button {
-            padding: 10px 15px;
-            background-color: #007BFF; /* Blue */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none; /* Remove underline from link */
-        }
-        .go-back-button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-        }
-
         .go-back-button {
             display: inline-flex;
             align-items: center;
@@ -107,60 +82,68 @@ $receipts = $db->query("SELECT r.id2, r.receipt_details2, r.created_at2, s.total
             border-radius: 5px;
             font-size: 16px;
             transition: background-color 0.3s ease;
+            margin-bottom: 20px;
         }
-
         .go-back-button i {
-            margin-right: 8px; /* Space between the icon and text */
+            margin-right: 8px;
         }
-
         .go-back-button:hover {
             background-color: #4cae4c;
         }
-    </style>
-    <script>
-        function printReceipt(receiptId) {
-            var printWindow = window.open('print_receipt.php?id=' + receiptId, '_blank');
-            printWindow.onload = function() {
-                printWindow.print();
-            };
+        .total-price {
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 20px;
         }
-    </script>
+    </style>
 </head>
 <body>
-    <div><br><br>
 
-    <a href="./dashboard2.php" class="go-back-button">
-        <i class="fas fa-arrow-left"></i> Go Back
-    </a></div>
+<div class="sidebar">
+    <?php include 'sidebar.php'; // Sidebar content goes here ?>
+</div>
 
-    <h1>Receipts</h1>
+<div class="content">
+    <div>
+        <a href="dashboard.php" class="go-back-button">
+            <i class="fas fa-arrow-left"></i> Go Back
+        </a>
+    </div>
+
+    <h1>Sales Record</h1>
+
     <table>
-        <tr>
-            <th>Receipt ID</th>
-            <th>Product</th>
-            <th>Receipt Details</th>
-            <th>Date</th>
-            <th>Action</th>
-        </tr>
-        <?php foreach ($receipts as $receipt): ?>
-    <tr>
-        <td><?php echo htmlspecialchars($receipt['id2']); ?></td>
-        <td><?php echo htmlspecialchars($receipt['product_name2']); ?></td>
-        <td><?php echo htmlspecialchars($receipt['receipt_details2']); ?></td>
-        <td><?php echo htmlspecialchars($receipt['created_at2']); ?></td>
-        <td>
-            <button class="print-button" onclick="printReceipt(<?php echo $receipt['id2']; ?>)">Print</button>
-            <form method="POST" style="display:inline;">
-                <input type="hidden" name="receipt_id" value="<?php echo $receipt['id2']; ?>">
-                <button type="submit" name="delete_receipt" class="delete-button">Delete</button>
-            </form>
-        </td>
-    </tr>
-<?php endforeach; ?>
-
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Sale Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($sales)): ?>
+                <tr>
+                    <td colspan="4" style="text-align: center;">No sales records found.</td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($sales as $sale): ?>
+                    <tr id="row_<?php echo htmlspecialchars($sale['id']); ?>">
+                        <td><?php echo htmlspecialchars($sale['id']); ?></td>
+                        <td><?php echo htmlspecialchars($sale['product_name']); ?></td>
+                        <td>Php <?php echo number_format($sale['price'], 2); ?></td>
+                        <td><?php echo htmlspecialchars($sale['sale_date']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
     </table>
 
-    <!-- <br>------------------------------------------<br> -->
+    <div class="total-price">
+        Total Price: Php <?php echo number_format($totalPrice, 2); ?>
+    </div>
+</div>
 
 </body>
 </html>

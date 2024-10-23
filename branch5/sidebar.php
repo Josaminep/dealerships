@@ -13,7 +13,7 @@
             color: white;
         }
 
-        .sidebar h2 {
+        .sidebar h3 {
             font-size: 25px;
             color: white;
             text-align: center;
@@ -75,13 +75,13 @@
 </head>
 <body>
 <div class="sidebar">
-        <h2>BRANCH 1</h2>
+        <h3>BRANCH 5</h3>
         <ul>
-            <li><a id="viewProductsBtn" href='./dashboard.php'>Dashboard</a></li>
-            <li><a id="viewProductsBtn" href='./view_products.php'>View Stock Products</a></li>
-            <li><a id="purchaseBtn" href='./purchase.php'>Pending Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./print_receipt.php'>Completed Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./view_receipts.php'>Records of Sales</a></li>
+            <li><a id="viewProductsBtn" href='./dashboard5.php'>Dashboard</a></li>
+            <li><a id="viewProductsBtn" href='./view_products5.php'>View Stock Products</a></li>
+            <li><a id="purchaseBtn" href='./purchase5.php'>Pending Orders</a></li>
+            <li><a id="viewReceiptsBtn" href='./print_receipt5.php'>Completed Orders</a></li>
+            <li><a id="viewReceiptsBtn" href='./view_receipts5.php'>Records of Sales</a></li>
             <li><a href="../logout.php" >Logout</a></li>
         </ul>
     </div>

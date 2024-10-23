@@ -4,81 +4,17 @@ require '../db.php'; // Include your database connection file
 
 // Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 3) {
-   
+    // Redirect or handle unauthorized access
+    exit("Unauthorized access.");
 }
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $total_price = 0;
-    $sales_data = [];
-    $products_info = [];
+// Fetch sales data for branch 1
+$stmt = $db->prepare("SELECT id, product_id, product_name, price, sale_date, branch FROM sales WHERE branch = ?");
+$stmt->execute(['Branch 3']);
+$sales = $stmt->fetchAll();
 
-    foreach ($_POST['product_id'] as $index => $product_id) {
-        $quantity_sold = $_POST['quantity_sold'][$index];
-
-        // Fetch product information
-        $stmt = $db->prepare("SELECT * FROM products3 WHERE id3 = ?");
-        $stmt->execute([$product_id]);
-        $product = $stmt->fetch();
-
-        if ($product && $product['stock3'] >= $quantity_sold) {
-            // Calculate total price for this product
-            $price = $quantity_sold * $product['price3'];
-            $total_price += $price;
-
-            // Store sales data for later insertion
-            $sales_data[] = [
-                'product_id' => $product_id,
-                'quantity_sold' => $quantity_sold,
-                'total_price' => $price
-            ];
-            $products_info[] = "{$quantity_sold} {$product['product_name3']} at Php {$product['price3']} each"; // Added price
-        } else {
-            echo "Insufficient stock for the product: {$product['product_name3']}!";
-            exit();
-        }
-    }
-
-    // Insert sale records into the sales table and collect sale IDs
-    $sale_ids = [];
-   // Assuming $data contains valid product IDs and is fetched correctly
-   
-   foreach ($sales_data as $data) {
-    $stmt = $db->prepare("INSERT INTO sales3 (product_id3, quantity_sold3, total_price3, sale_date3) VALUES (?, ?, ?, NOW())");
-    $stmt->execute([$data['product_id'], $data['quantity_sold'], $data['total_price']]);
-    $sale_ids[] = $db->lastInsertId();
-}
-
-
-   // Insert receipt record with the aggregated total price
-   $receipt_details = "Purchased:<br>------------------------------------------<br>" . implode("<br>------------------------------------------<br>", $products_info) . "<br>------------------------------------------<br><br><br> TOTAL PRICE = Php {$total_price}";
-   $stmt = $db->prepare("INSERT INTO receipts3 (sale_id3, receipt_details3) VALUES (?, ?)");
-   $stmt->execute([$sale_ids[0], $receipt_details]); // Use the first sale ID for the receipt
-   
-
-
-
-    // Update product stock
-    foreach ($sales_data as $data) {
-        $stmt = $db->prepare("UPDATE products3 SET stock3 = stock3 - ? WHERE id3 = ?");
-        $stmt->execute([$data['quantity_sold'], $data['product_id']]);
-    }
-
-    // Record income in income_records
-    $stmt = $db->prepare("INSERT INTO income_records3 (period3, amount3) VALUES ('daily', ?) ON DUPLICATE KEY UPDATE amount3 = amount3 + ?");
-    $stmt->execute([$total_price, $total_price]);
-
-    $stmt = $db->prepare("INSERT INTO income_records3 (period3, amount3) VALUES ('weekly', ?) ON DUPLICATE KEY UPDATE amount3 = amount3 + ?");
-    $stmt->execute([$total_price, $total_price]);
-
-    $stmt = $db->prepare("INSERT INTO income_records3 (period3, amount3) VALUES ('monthly', ?) ON DUPLICATE KEY UPDATE amount3 = amount3 + ?");
-    $stmt->execute([$total_price, $total_price]);
-
-    echo "Purchase successful! Receipt generated.";
-}
-
-// Fetch all products for the purchase form
-$products = $db->query("SELECT * FROM products3")->fetchAll();
+// Prepare success message if it exists
+$successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) : '';
 ?>
 
 <!DOCTYPE html>
@@ -87,98 +23,48 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>Make a Purchase</title>
+    <title>Sales Records</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: lightgrey;
+            background-color: #f4f4f4;
             margin: 0;
-            padding: 20px;
-            backdrop-filter: blur(10px);
+            display: flex;
         }
-
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            margin-left: 250px;
+            border: 3px solid black;
+        }
         h1 {
             text-align: center;
-            color: black;
+            color: #333;
             margin-bottom: 30px;
         }
-
-        /* Form Container */
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
-        /* Label Styles */
-        label {
-            display: inline-block;
-            margin-bottom: 8px;
-            font-size: 16px;
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #eaeaea;
             color: #333;
         }
-
-        /* Select and Input Styles */
-        select, input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
-
-        /* Add/Remove Product Button Styles */
-        button {
-            padding: 10px 15px;
-            background-color: #5cb85c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-right: 10px;
-        }
-
-        button:hover {
-            background-color: #4cae4c;
-        }
-
-        .remove-btn {
-            background-color: #d9534f;
-        }
-
-        .remove-btn:hover {
-            background-color: #c9302c;
-        }
-
-        /* Add Product Button */
-        .add-product-btn {
-            margin-bottom: 20px;
-            background-color: #337ab7;
-        }
-
-        .add-product-btn:hover {
-            background-color: #286090;
-        }
-
-        /* Go Back Button */
-        .go-back {
-            text-align: center;
-            margin-top: 30px;
-            text-decoration: none;
-            padding: 10px 20px;
-            background-color: #337ab7;
-            color: white;
-            border-radius: 5px;
-        }
-
-        .go-back:hover {
-            background-color: #286090;
+        tr:hover {
+            background-color: #f1f1f1;
         }
         .go-back-button {
             display: inline-flex;
@@ -190,80 +76,154 @@ $products = $db->query("SELECT * FROM products3")->fetchAll();
             border-radius: 5px;
             font-size: 16px;
             transition: background-color 0.3s ease;
+            margin-bottom: 20px;
         }
-
         .go-back-button i {
-            margin-right: 8px; /* Space between the icon and text */
+            margin-right: 8px;
         }
-
         .go-back-button:hover {
             background-color: #4cae4c;
         }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
-    <script>
-        function addProduct() {
-            const productRow = document.createElement('div');
-            productRow.innerHTML = `
-                <label for="product_id">Select Product:</label>
-                <select name="product_id[]" required>
-                    <?php foreach ($products as $product): ?>
-                        <option value="<?php echo $product['id']; ?>">
-                            <?php echo $product['product_name'] . " (Php " . number_format($product['price'], 2) . ", Stock: " . $product['stock'] . ")"; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <label for="quantity_sold">Quantity:</label>
-                <input type="number" name="quantity_sold[]" min="1" required>
-                <button type="button" class="remove-btn" onclick="removeProduct(this)">Remove</button>
-                <br><br>
-            `;
-            document.getElementById('products-container').appendChild(productRow);
-        }
-
-        function removeProduct(button) {
-            const productRow = button.parentNode;
-            productRow.parentNode.removeChild(productRow);
-        }
-    </script>
 </head>
 <body>
-<div><br><br>
-<a href="./dashboard3.php" class="go-back-button">
-        <i class="fas fa-arrow-left"></i> Go Back
-    </a></div>
 
+<div class="sidebar">
+    <?php include 'sidebar.php'; // Sidebar content goes here ?>
+</div>
 
-
-    <h1>Make a Purchase</h1>
-
-    <div class="form-container">
-        <form method="POST">
-            <div id="products-container">
-                <div>
-                    <label for="product_id">Select Product:</label>
-                    <select name="product_id[]" required>
-    <?php foreach ($products as $product): ?>
-        <option value="<?php echo $product['id3']; ?>">
-            <?php echo $product['product_name3'] . " (Php " . number_format($product['price3'], 2) . ", Stock: " . $product['stock3'] . ")"; ?>
-        </option>
-    <?php endforeach; ?>
-</select>
-
-
-                    <label for="quantity_sold">Quantity:</label>
-                    <input type="number" name="quantity_sold[]" min="1" required>
-                    <br><br>
-                </div>
-            </div>
-
-            <button type="button" class="add-product-btn" onclick="addProduct()">Add Another Product</button>
-            <br><br>
-            <button type="submit">Submit Purchase</button>
-        </form>
+<div class="content">
+    <div>
+        <a href="dashboard3.php" class="go-back-button">
+            <i class="fas fa-arrow-left"></i> Go Back
+        </a>
     </div>
 
+    <h1>Pending Order</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Sale Date</th>
+                <th>Branch</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($sales)): ?>
+                <tr>
+                    <td colspan="7" style="text-align: center;">No sales records found.</td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($sales as $sale): ?>
+                    <tr id="row_<?php echo htmlspecialchars($sale['id']); ?>">
+                        <td><?php echo htmlspecialchars($sale['id']); ?></td>
+                        <td><?php echo htmlspecialchars($sale['product_id']); ?></td>
+                        <td><?php echo htmlspecialchars($sale['product_name']); ?></td>
+                        <td>Php <?php echo number_format($sale['price'], 2); ?></td>
+                        <td><?php echo htmlspecialchars($sale['sale_date']); ?></td>
+                        <td><?php echo htmlspecialchars($sale['branch']); ?></td>
+                        <td>
+                            <form id="acceptOrderForm_<?php echo htmlspecialchars($sale['id']); ?>" style="display: inline;">
+                                <input type="hidden" name="sale_id" value="<?php echo htmlspecialchars($sale['id']); ?>">
+                                <button type="button" style="background-color: green; color: white;" class="accept-button" onclick="acceptOrder(<?php echo htmlspecialchars($sale['id']); ?>)">Accept</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <!-- Modal Structure for Success Message -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <p id="successMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        function acceptOrder(saleId) {
+            const formData = new FormData();
+            formData.append('sale_id', saleId);
+
+            // Send the AJAX request
+            fetch('accept_order.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display success message in the modal
+                    document.getElementById('successMessage').innerText = data.message;
+                    document.getElementById('successModal').style.display = 'block';
+
+                    // Remove the row from the table
+                    const row = document.getElementById('row_' + saleId);
+                    if (row) {
+                        row.remove();
+                    }
+                } else {
+                    alert(data.message || 'Failed to accept the order. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Close the modal when the close button is clicked
+        function closeModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        // Close the modal if clicked outside of the modal content
+        window.onclick = function(event) {
+            const modal = document.getElementById('successModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</div>
 
 </body>
 </html>
-

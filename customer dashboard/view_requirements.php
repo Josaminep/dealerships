@@ -26,7 +26,6 @@ if (!$product) {
     echo "No product found.";
     exit();
 }
-
 // Handle form submission to save to sales table
 $insertSuccess = false; // Initialize the success flag
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -37,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         // Insert the sales data into the sales table
-        $insertQuery = "INSERT INTO sales (product_id, product_name, price, branch) 
-                        VALUES (:id, :product_name, :price, :branch)";
+        $insertQuery = "INSERT INTO sales (product_id, product_name, price, branch, status) 
+                        VALUES (:id, :product_name, :price, :branch, :status)";
         $insertStmt = $pdo->prepare($insertQuery);
 
         // Execute the query and check for success
@@ -46,11 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id' => $product_id,
             'product_name' => $product_name,
             'price' => $price,
-            'branch' => $branch
+            'branch' => $branch,
+            'status' => 'pending' // Set status to pending
         ]);
     }
 }
-
 ?>
 
 <!DOCTYPE html>

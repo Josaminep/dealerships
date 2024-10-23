@@ -5,7 +5,7 @@ require '../db.php'; // Include your database connection file
 // Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 1) {
     // Redirect or handle unauthorized access
-    exit("Unauthorized access.");
+    exit(json_encode(['message' => 'Unauthorized access.']));
 }
 
 /**
@@ -18,7 +18,7 @@ if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' ||
  */
 function updateSaleStatus($db, $saleId, $status) {
     // Prepare the SQL statement to update the status
-    $stmt = $db->prepare("UPDATE receipts SET status = ? WHERE id = ?");
+    $stmt = $db->prepare("UPDATE sales SET status = ? WHERE id = ?");
     
     // Execute the statement and return the result
     return $stmt->execute([$status, $saleId]);
@@ -28,8 +28,8 @@ function updateSaleStatus($db, $saleId, $status) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the input data
     $data = json_decode(file_get_contents('php://input'), true);
-    $saleId = $data['id'] ?? null; // Use null coalescing to avoid undefined index notice
-    $status = $data['status'] ?? null;
+    $saleId = isset($data['id']) ? intval($data['id']) : null; // Convert ID to an integer
+    $status = isset($data['status']) ? htmlspecialchars($data['status']) : null; // Sanitize status input
 
     // Validate input
     if ($saleId === null || $status === null) {
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['message' => 'Sale status updated successfully.']);
     } else {
         // Log error information
-        error_log("Failed to update sale status for ID: $saleId. Error: " . print_r($db->errorInfo(), true)); // Log error info to server log
+        error_log("Failed to update sale status for ID: $saleId. Error: " . print_r($db->errorInfo(), true));
         http_response_code(500); // Internal server error
         echo json_encode(['message' => 'Failed to update the sale status. Please try again.']);
     }

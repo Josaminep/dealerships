@@ -4,15 +4,8 @@ require '../db.php'; // Include your database connection file
 
 // Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 4) {
-  
-}
-
-
-// Handle delete request
-if (isset($_POST['delete_product'])) {
-    $productId = $_POST['product_id'];
-    $db->prepare("DELETE FROM products WHERE id = ?")->execute([$productId]);
-    header("Location: " . $_SERVER['PHP_SELF']); // Redirect to the same page
+    header('Location: login.php'); // Redirect to login if not authorized
+    exit;
 }
 
 // Handle search request
@@ -21,16 +14,23 @@ if (isset($_GET['search'])) {
     $search = $_GET['search'];
 }
 
-// Fetch products based on search query
+// Fetch products based on search query or low stock request
 if ($search) {
-    $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ?");
-    $stmt->execute(['%' . $search . '%', '%' . $search . '%']);
+    if (strtolower($search) == 'lowstocks') {
+        // Fetch products with low stock (less than 10)
+        $stmt = $db->prepare("SELECT * FROM products WHERE stock < 10");
+        $stmt->execute();
+    } else {
+        // Fetch products based on product name or brand
+        $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ?");
+        $stmt->execute(['%' . $search . '%', '%' . $search . '%']);
+    }
     $products = $stmt->fetchAll();
 } else {
-    $products = $db->query("SELECT * FROM products WHERE 1")->fetchAll(); // Modified to select from products table
+    // Fetch all products if no search query
+    $products = $db->query("SELECT * FROM products")->fetchAll();
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -38,14 +38,23 @@ if ($search) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <title>Available Products</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: lightgrey;
             margin: 0;
-            padding: 20px;
+            display: flex; /* Use flexbox for layout */
+        }
+
+
+
+        /* Main content styles */
+        .main-content {
+            flex-grow: 1; /* Allow content area to take remaining space */
+    padding: 20px;
+    margin-left: 250px; /* Set a left margin equal to the sidebar width */
+            border: 3px solid black;
         }
 
         h1 {
@@ -154,54 +163,62 @@ if ($search) {
         .go-back-button:hover {
             background-color: #4cae4c;
         }
+
+        /* No products message */
+        .no-products {
+            text-align: center;
+            color: #888;
+            font-size: 18px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div>
-        <br><br>
-        <a href="./dashboard4.php" class="go-back-button">
-            <i class="fas fa-arrow-left"></i> Go Back
-        </a>
+    <div class="sidebar">
+        <?php include 'sidebar.php'; ?>
     </div>
-    <h1>Available Products</h1>
+    <div class="main-content">
+        <div>
+            <a href="dashboard4.php" class="go-back-button">
+                <i class="fas fa-arrow-left"></i> Go Back
+            </a>
+        </div>
+        <h1>Available Products</h1>
 
-    <!-- Search Form -->
-    <form method="GET">
-        <input type="text" name="search" placeholder="Search by product name or brand" value="<?php echo htmlspecialchars($search); ?>">
-        <input type="submit" value="Search">
-        <a href="<?php echo $_SERVER['PHP_SELF']; ?>"><button type="button">Refresh</button></a>
-    </form>
+        <!-- Search Form -->
+        <form method="GET">
+            <input type="text" name="search" placeholder="Search by product name, description or type 'Low Stocks'" value="<?php echo htmlspecialchars($search); ?>">
+            <input type="submit" value="Search">
+            <a href="<?php echo $_SERVER['PHP_SELF']; ?>"><button type="button">Refresh</button></a>
+        </form>
 
-    <!-- Products Table -->
-    <table>
-        <tr>
-            <th>Product Name</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Brand</th>
-            <th>Stock</th>
-            <th>Categories</th>
-            <th>Action</th>
-        </tr>
-        <?php foreach ($products as $product): ?>
-        <tr>
-            <td><?php echo htmlspecialchars($product['product_name']); ?></td>
-            <td>Php <?php echo number_format($product['price'], 2); ?></td>
-            <td><?php echo htmlspecialchars($product['quantity']); ?></td>
-            <td><?php echo htmlspecialchars($product['brand']); ?></td>
-            <td class="<?php echo $product['stock'] < 10 ? 'low-stock' : ''; ?>">
-                <?php echo htmlspecialchars($product['stock']); ?> <?php echo $product['stock'] < 10 ? '(Low Stock)' : ''; ?>
-            </td>
-            <td><?php echo htmlspecialchars($product['categories']); ?></td>
-            <td>
-                <form method="post" action="">
-                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                    <input type="submit" name="delete_product" value="Delete" onclick="return confirm('Are you sure you want to delete this product?');">
-                </form>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-    </table>
+        <!-- Products Table -->
+        <table>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Description</th>
+                <th>Stock</th>
+            </tr>
+            <?php if (count($products) > 0): ?>
+                <?php foreach ($products as $product): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($product['product_name']); ?></td>
+                    <td>Php <?php echo number_format($product['price'], 2); ?></td>
+                    <td><?php echo htmlspecialchars($product['quantity']); ?></td>
+                    <td><?php echo htmlspecialchars($product['brand']); ?></td>
+                    <td class="<?php echo $product['stock'] < 10 ? 'low-stock' : ''; ?>">
+                        <?php echo htmlspecialchars($product['stock']); ?> <?php echo $product['stock'] < 10 ? '(Low Stock)' : ''; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="5" class="no-products">No products found.</td>
+                </tr>
+            <?php endif; ?>
+        </table>
+    </div>
 </body>
 </html>
-
