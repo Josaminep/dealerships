@@ -29,34 +29,34 @@ $staff_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch monthly sales data
 $salesDataMonthly = $db->query("
-    SELECT DATE_FORMAT(sale_date, '%Y-%m') AS month, SUM(total_price) AS total_sales
+    SELECT DATE_FORMAT(sale_date, '%Y-%m') AS month, SUM(price) AS total_sales
     FROM (
-        SELECT sale_date, total_price FROM sales
+        SELECT sale_date, price FROM sales
         UNION ALL
-        SELECT sale_date2, total_price2 FROM sales2
+        SELECT sale_date2, price FROM sales2
         UNION ALL
-        SELECT sale_date3, total_price3 FROM sales3
+        SELECT sale_date3, price FROM sales3
         UNION ALL
-        SELECT sale_date4, total_price4 FROM sales4
+        SELECT sale_date4, price FROM sales4
         UNION ALL
-        SELECT sale_date5, total_price5 FROM sales5
+        SELECT sale_date5, price FROM sales5
     ) AS all_sales
     GROUP BY month
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch yearly sales data
 $salesDataYearly = $db->query("
-    SELECT DATE_FORMAT(sale_date, '%Y') AS year, SUM(total_price) AS total_sales
+    SELECT DATE_FORMAT(sale_date, '%Y') AS year, SUM(price) AS total_sales
     FROM (
-        SELECT sale_date, total_price FROM sales
+        SELECT sale_date, price FROM sales
         UNION ALL
-        SELECT sale_date2, total_price2 FROM sales2
+        SELECT sale_date2, price FROM sales2
         UNION ALL
-        SELECT sale_date3, total_price3 FROM sales3
+        SELECT sale_date3, price FROM sales3
         UNION ALL
-        SELECT sale_date4, total_price4 FROM sales4
+        SELECT sale_date4, price FROM sales4
         UNION ALL
-        SELECT sale_date5, total_price5 FROM sales5
+        SELECT sale_date5, price FROM sales5
     ) AS all_sales
     GROUP BY year
 ")->fetchAll(PDO::FETCH_ASSOC);
@@ -88,6 +88,7 @@ foreach ($stocks as $product) {
     $productStocks[] = (int)$product['stock'];
 }
 ?>
+
 
 <?php include 'sidebar.php'; ?>
 

@@ -152,7 +152,7 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
                 </tr>
             <?php else: ?>
                 <?php foreach ($sales as $sale): ?>
-                    <tr>
+                    <tr id="row_<?php echo htmlspecialchars($sale['id']); ?>">
                         <td><?php echo htmlspecialchars($sale['id']); ?></td>
                         <td><?php echo htmlspecialchars($sale['product_id']); ?></td>
                         <td><?php echo htmlspecialchars($sale['product_name']); ?></td>
@@ -160,9 +160,9 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
                         <td><?php echo htmlspecialchars($sale['sale_date']); ?></td>
                         <td><?php echo htmlspecialchars($sale['branch']); ?></td>
                         <td>
-                            <form action="accept_order.php" method="POST" style="display: inline;">
+                            <form id="acceptOrderForm_<?php echo htmlspecialchars($sale['id']); ?>" style="display: inline;">
                                 <input type="hidden" name="sale_id" value="<?php echo htmlspecialchars($sale['id']); ?>">
-                                <button type="submit" style="background-color: green; color: white;" class="accept-button">Accept</button>
+                                <button type="button" style="background-color: green; color: white;" class="accept-button" onclick="acceptOrder(<?php echo htmlspecialchars($sale['id']); ?>)">Accept</button>
                             </form>
                         </td>
                     </tr>
@@ -171,20 +171,56 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
         </tbody>
     </table>
 
-    <!-- Modal Structure -->
+    <!-- Modal Structure for Success Message -->
     <div id="successModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="document.getElementById('successModal').style.display='none'">&times;</span>
-            <p><?php echo $successMessage; ?></p>
+            <span class="close" onclick="closeModal()">&times;</span>
+            <p id="successMessage"></p>
         </div>
     </div>
 
     <script>
-        // Show modal if there is a success message
-        window.onload = function() {
-            <?php if ($successMessage): ?>
-                document.getElementById('successModal').style.display = 'block';
-            <?php endif; ?>
+        function acceptOrder(saleId) {
+            const formData = new FormData();
+            formData.append('sale_id', saleId);
+
+            // Send the AJAX request
+            fetch('accept_order.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display success message in the modal
+                    document.getElementById('successMessage').innerText = data.message;
+                    document.getElementById('successModal').style.display = 'block';
+
+                    // Remove the row from the table
+                    const row = document.getElementById('row_' + saleId);
+                    if (row) {
+                        row.remove();
+                    }
+                } else {
+                    alert(data.message || 'Failed to accept the order. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Close the modal when the close button is clicked
+        function closeModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        // Close the modal if clicked outside of the modal content
+        window.onclick = function(event) {
+            const modal = document.getElementById('successModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
         }
     </script>
 </div>
