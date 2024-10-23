@@ -10,7 +10,7 @@ if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' ||
 
 // Fetch sales data for branch 1 with status = 'done'
 $stmt = $db->prepare("SELECT id, product_name, price, sale_date, branch FROM receipts WHERE branch = ? AND status = ?");
-$stmt->execute(['Branch 3', 'done']);
+$stmt->execute(['Branch 4', 'completed']);
 $sales = $stmt->fetchAll();
 
 // Initialize total price variable
@@ -106,7 +106,7 @@ foreach ($sales as $sale) {
 
 <div class="content">
     <div>
-        <a href="dashboard4.php" class="go-back-button">
+        <a href="dashboard.php" class="go-back-button">
             <i class="fas fa-arrow-left"></i> Go Back
         </a>
     </div>
