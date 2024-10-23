@@ -26,6 +26,7 @@ if (!$product) {
     echo "No product found.";
     exit();
 }
+
 // Handle form submission to save to sales table
 $insertSuccess = false; // Initialize the success flag
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,7 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = $_POST['price'];
     $branch = $_POST['branch'];
 
-    if (empty($errors)) {
+    if (empty($branch)) {
+        echo "<script>alert('Please select a branch before submitting.');</script>";
+    } else {
         // Insert the sales data into the sales table
         $insertQuery = "INSERT INTO sales (product_id, product_name, price, branch, status) 
                         VALUES (:id, :product_name, :price, :branch, :status)";
@@ -66,12 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #e0f7fa, #b3e5fc);
         }
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #0c3b60;
-            padding: 10px 20px;
-        }
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #0c3b60;
+        padding: 10px 20px;
+    }
         .logo img {
             width: 100px;
             height: auto;
@@ -203,37 +206,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <main class="content">
-    <div class="branch-select">
-        <select id="branch-dropdown">
-            <option value="" disabled selected>Select Branch</option>
-            <option value="Branch 1">Branch 1</option>
-            <option value="Branch 2">Branch 2</option>
-            <option value="Branch 3">Branch 3</option>
-            <option value="Branch 4">Branch 4</option>
-            <option value="Branch 5">Branch 5</option>
-        </select>
-    </div>
+        <div class="branch-select">
+            <select id="branch-dropdown">
+                <option value="" disabled selected>Select Branch</option>
+                <option value="Branch 1">Branch 1</option>
+                <option value="Branch 2">Branch 2</option>
+                <option value="Branch 3">Branch 3</option>
+                <option value="Branch 4">Branch 4</option>
+                <option value="Branch 5">Branch 5</option>
+            </select>
+        </div>
 
-    <div class="motorcycle-info">
-        <!-- Display the name and price here -->
-        <h2 id="motorcycle-name"><?php echo htmlspecialchars($product['product_name']); ?></h2>
-        <p id="motorcycle-price">PHP <?php echo number_format($product['price'], 2); ?></p>
-    </div>
+        <div class="motorcycle-info">
+            <!-- Display the name and price here -->
+            <h2 id="motorcycle-name"><?php echo htmlspecialchars($product['product_name']); ?></h2>
+            <p id="motorcycle-price">PHP <?php echo number_format($product['price'], 2); ?></p>
+        </div>
 
-    <!-- Form to submit the purchase and upload requirements -->
-    <form action="" method="POST" enctype="multipart/form-data">
-        <!-- Hidden fields to send the product details -->
-        <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
-        <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($product['product_name']); ?>">
-        <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
-        
-        <!-- Selected branch -->
-        <input type="hidden" name="branch" id="branch-input">
+        <!-- Form to submit the purchase and upload requirements -->
+        <form id="purchase-form" action="" method="POST" enctype="multipart/form-data">
+            <!-- Hidden fields to send the product details -->
+            <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+            <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($product['product_name']); ?>">
+            <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
 
-        <!-- Your other form elements here -->
+            <!-- Selected branch -->
+            <input type="hidden" name="branch" id="branch-input">
 
-        <button type="submit" class="submit-btn">Submit</button>
-    </form>
+            <!-- Your other form elements here -->
+
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
     </main>
 
     <script>
@@ -242,12 +245,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('branch-input').value = selectedBranch;
         });
 
+        document.getElementById('purchase-form').addEventListener('submit', function(event) {
+            const branchInput = document.getElementById('branch-input').value;
+            if (!branchInput) {
+                alert('Please select a branch before submitting.');
+                event.preventDefault(); // Prevent form submission
+            }
+        });
+
         // Show alert popup based on PHP response
         <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
             <?php if ($insertSuccess): ?>
-                alert("Sale recorded successfully!");
+                echo "alert('Sale recorded successfully!');";
             <?php else: ?>
-                alert("Failed to record the sale.");
+                echo "alert('Failed to record the sale.');";
             <?php endif; ?>
         <?php endif; ?>
     </script>
