@@ -10,7 +10,7 @@ if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' ||
 
 // Fetch sales data for branch 1 with status = 'done'
 $stmt = $db->prepare("SELECT id, product_name, price, sale_date, branch FROM receipts WHERE branch = ? AND status = ?");
-$stmt->execute(['Branch 5', 'done']);
+$stmt->execute(['Branch 5', 'completed']);
 $sales = $stmt->fetchAll();
 
 // Initialize total price variable

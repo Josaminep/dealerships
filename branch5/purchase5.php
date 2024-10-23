@@ -1,19 +1,15 @@
 <?php
 session_start();
-require '../db.php'; // Include your database connection file
+require '../db.php';
 
-// Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 5) {
-    // Redirect or handle unauthorized access
     exit("Unauthorized access.");
 }
 
-// Fetch sales data for branch 1
-$stmt = $db->prepare("SELECT id, product_id, product_name, price, sale_date, branch FROM sales WHERE branch = ?");
+$stmt = $db->prepare("SELECT id, product_id, product_name, price, sale_date, branch FROM sales WHERE branch = ? AND status = 'pending'");
 $stmt->execute(['Branch 5']);
 $sales = $stmt->fetchAll();
 
-// Prepare success message if it exists
 $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) : '';
 ?>
 
@@ -84,8 +80,6 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
         .go-back-button:hover {
             background-color: #4cae4c;
         }
-
-        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -131,7 +125,7 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
         </a>
     </div>
 
-    <h1>Pending Order</h1>
+    <h1>Pending Orders</h1>
 
     <table>
         <thead>
@@ -148,7 +142,7 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
         <tbody>
             <?php if (empty($sales)): ?>
                 <tr>
-                    <td colspan="7" style="text-align: center;">No sales records found.</td>
+                    <td colspan="7" style="text-align: center;">No pending sales records found.</td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($sales as $sale): ?>
@@ -171,7 +165,6 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
         </tbody>
     </table>
 
-    <!-- Modal Structure for Success Message -->
     <div id="successModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
@@ -184,7 +177,6 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
             const formData = new FormData();
             formData.append('sale_id', saleId);
 
-            // Send the AJAX request
             fetch('accept_order.php', {
                 method: 'POST',
                 body: formData
@@ -192,11 +184,9 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Display success message in the modal
                     document.getElementById('successMessage').innerText = data.message;
                     document.getElementById('successModal').style.display = 'block';
 
-                    // Remove the row from the table
                     const row = document.getElementById('row_' + saleId);
                     if (row) {
                         row.remove();
@@ -210,12 +200,10 @@ $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) :
             });
         }
 
-        // Close the modal when the close button is clicked
         function closeModal() {
             document.getElementById('successModal').style.display = 'none';
         }
 
-        // Close the modal if clicked outside of the modal content
         window.onclick = function(event) {
             const modal = document.getElementById('successModal');
             if (event.target == modal) {

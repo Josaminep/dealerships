@@ -1,33 +1,27 @@
 <?php
 session_start();
-require '../db.php'; // Include your database connection file
+require '../db.php';
 
-// Check if user is logged in and is staff from branch 1
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 5) {
-    header('Location: login.php'); // Redirect to login if not authorized
+    header('Location: login.php'); 
     exit;
 }
 
-// Handle search request
 $search = '';
 if (isset($_GET['search'])) {
     $search = $_GET['search'];
 }
 
-// Fetch products based on search query or low stock request
 if ($search) {
     if (strtolower($search) == 'lowstocks') {
-        // Fetch products with low stock (less than 10)
         $stmt = $db->prepare("SELECT * FROM products WHERE stock < 10");
         $stmt->execute();
     } else {
-        // Fetch products based on product name or brand
         $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ?");
         $stmt->execute(['%' . $search . '%', '%' . $search . '%']);
     }
     $products = $stmt->fetchAll();
 } else {
-    // Fetch all products if no search query
     $products = $db->query("SELECT * FROM products")->fetchAll();
 }
 ?>
@@ -44,16 +38,12 @@ if ($search) {
             font-family: Arial, sans-serif;
             background-color: lightgrey;
             margin: 0;
-            display: flex; /* Use flexbox for layout */
+            display: flex; 
         }
-
-
-
-        /* Main content styles */
         .main-content {
-            flex-grow: 1; /* Allow content area to take remaining space */
-    padding: 20px;
-    margin-left: 250px; /* Set a left margin equal to the sidebar width */
+            flex-grow: 1; 
+            padding: 20px;
+            margin-left: 250px; 
             border: 3px solid black;
         }
 
@@ -61,13 +51,10 @@ if ($search) {
             color: black;
             text-align: center;
         }
-
-        /* Search Form */
         form {
             text-align: center;
             margin-bottom: 30px;
         }
-
         input[type="text"] {
             padding: 10px;
             width: 300px;
@@ -75,7 +62,6 @@ if ($search) {
             border-radius: 5px;
             font-size: 16px;
         }
-
         input[type="submit"], button {
             padding: 10px 15px;
             background-color: #5cb85c;
@@ -93,42 +79,34 @@ if ($search) {
         input[type="submit"]:hover, button:hover {
             background-color: #4cae4c;
         }
-
-        /* Table Styles */
         table {
-            width: 100%;
+            width: 95%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
+            margin-left: 45px;
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
         th, td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-
         th {
             background-color: #f8f8f8;
             color: #333;
             font-weight: bold;
         }
-
         tr:hover {
             background-color: #f1f1f1;
         }
-
         td:last-child {
             text-align: center;
         }
-
-        /* Low Stock Styling */
         .low-stock {
             color: red;
             font-weight: bold;
         }
-
         .go-back {
             display: inline-block;
             margin-top: 20px;
@@ -139,11 +117,9 @@ if ($search) {
             border-radius: 5px;
             font-size: 16px;
         }
-
         .go-back:hover {
             background-color: #286090;
         }
-
         .go-back-button {
             display: inline-flex;
             align-items: center;
@@ -155,16 +131,12 @@ if ($search) {
             font-size: 16px;
             transition: background-color 0.3s ease;
         }
-
         .go-back-button i {
-            margin-right: 8px; /* Space between the icon and text */
+            margin-right: 8px;
         }
-
         .go-back-button:hover {
             background-color: #4cae4c;
         }
-
-        /* No products message */
         .no-products {
             text-align: center;
             color: #888;
@@ -185,14 +157,12 @@ if ($search) {
         </div>
         <h1>Available Products</h1>
 
-        <!-- Search Form -->
         <form method="GET">
             <input type="text" name="search" placeholder="Search by product name, description or type 'Low Stocks'" value="<?php echo htmlspecialchars($search); ?>">
             <input type="submit" value="Search">
             <a href="<?php echo $_SERVER['PHP_SELF']; ?>"><button type="button">Refresh</button></a>
         </form>
 
-        <!-- Products Table -->
         <table>
             <tr>
                 <th>Product Name</th>
