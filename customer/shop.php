@@ -146,7 +146,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <input type="text" placeholder="Search...">
 
             <li class="logout-btn" type="button">
-            <a class="log-out" href="../logout.php">Logout</a>
+            <a class="log-out" href="login.php">Logout</a>
         </li>
         </div>
 
