@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-    /* Sidebar specific styles */
-    .sidebar {
+        /* Sidebar specific styles */
+        .sidebar {
             width: 20%;
             background-color: black;
             height: 100vh;
@@ -26,7 +27,6 @@
         .sidebar ul {
             list-style-type: none;
             padding: 0;
-           
         }
 
         .sidebar ul li {
@@ -36,21 +36,26 @@
 
         /* Button Link Styling */
         .sidebar ul li a {
-            display: block;
+            display: flex; /* Use flex for justification */
+            align-items: center; /* Center items vertically */
             padding: 20px;
-            background-color: #5cb85c;
+            background-color: #5cb85c; /* Default background color */
             color: white;
             text-decoration: none;
-            text-align: center;
             border-radius: 5px;
             font-size: 16px;
             margin-left: 20px;
             margin-right: 20px;
-            
+            justify-content: flex-start; /* Align items to the left */
         }
 
         .sidebar ul li a:hover {
-            background-color: burlywood;
+            background-color: burlywood; /* Hover color */
+        }
+        /* Active link styling */
+        .sidebar ul li a.active {
+            background-color: #f0ad4e; /* Active link color */
+            color: black;
         }
 
         /* Special styling for logout button */
@@ -62,27 +67,21 @@
             background-color: burlywood;
         }
 
-
-    .sidebar ul li a[href="logout.php"] {
-        background-color: #d9534f;
-    }
-
-    .sidebar ul li a[href="logout.php"]:hover {
-        background-color: burlywood;
-    }
-</style>
-
+        .sidebar ul li a i {
+            margin-right: 10px; /* Space between icon and text */
+        }
+    </style>
 </head>
 <body>
-<div class="sidebar">
+    <div class="sidebar">
         <h3>BRANCH 2</h3>
         <ul>
-            <li><a id="viewProductsBtn" href='./dashboard2.php'>Dashboard</a></li>
-            <li><a id="viewProductsBtn" href='./view_products2.php'>View Stock Products</a></li>
-            <li><a id="purchaseBtn" href='./purchase2.php'>Pending Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./print_receipt2.php'>Completed Orders</a></li>
-            <li><a id="viewReceiptsBtn" href='./view_receipts2.php'>Records of Sales</a></li>
-            <li><a href="../logout.php" >Logout</a></li>
+            <li><a href='./dashboard2.php' class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard2.php' ? 'active' : '' ?>"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href='./view_products2.php' class="<?= basename($_SERVER['PHP_SELF']) == 'view_products2.php' ? 'active' : '' ?>"><i class="fas fa-boxes"></i> View Stock Products</a></li>
+            <li><a href='./purchase2.php' class="<?= basename($_SERVER['PHP_SELF']) == 'purchase2.php' ? 'active' : '' ?>"><i class="fas fa-shopping-cart"></i> Pending Orders</a></li>
+            <li><a href='./print_receipt2.php' class="<?= basename($_SERVER['PHP_SELF']) == 'print_receipt2.php' ? 'active' : '' ?>"><i class="fas fa-clipboard-check"></i> Completed Orders</a></li>
+            <li><a href='./view_receipts2.php' class="<?= basename($_SERVER['PHP_SELF']) == 'view_receipts2.php' ? 'active' : '' ?>"><i class="fas fa-receipt"></i> Records of Sales</a></li>
+            <li><a href="../logout.php" class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
 </body>

@@ -21,9 +21,9 @@ if ($search) {
         $stmt = $db->prepare("SELECT * FROM products WHERE stock < 10");
         $stmt->execute();
     } else {
-        // Fetch products based on product name or brand
-        $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ?");
-        $stmt->execute(['%' . $search . '%', '%' . $search . '%']);
+        // Fetch products based on product name, brand, or categories
+        $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ? OR categories LIKE ?");
+        $stmt->execute(['%' . $search . '%', '%' . $search . '%', '%' . $search . '%']);
     }
     $products = $stmt->fetchAll();
 } else {
@@ -93,9 +93,10 @@ if ($search) {
 
         /* Table Styles */
         table {
-            width: 100%;
+            width: 95%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
+            margin-left: 45px;
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
@@ -176,7 +177,7 @@ if ($search) {
     </div>
     <div class="main-content">
         <div>
-            <a href="dashboard.php" class="go-back-button">
+            <a href="dashboard2.php" class="go-back-button">
                 <i class="fas fa-arrow-left"></i> Go Back
             </a>
         </div>
@@ -184,7 +185,7 @@ if ($search) {
 
         <!-- Search Form -->
         <form method="GET">
-            <input type="text" name="search" placeholder="Search by product name, description or type 'Low Stocks'" value="<?php echo htmlspecialchars($search); ?>">
+            <input type="text" name="search" placeholder="Search by product name, brand, or categories (or type 'Low Stocks')" value="<?php echo htmlspecialchars($search); ?>">
             <input type="submit" value="Search">
             <a href="<?php echo $_SERVER['PHP_SELF']; ?>"><button type="button">Refresh</button></a>
         </form>
@@ -195,7 +196,8 @@ if ($search) {
                 <th>Product Name</th>
                 <th>Price</th>
                 <th>Quantity</th>
-                <th>Description</th>
+                <th>Brand</th>
+                <th>Category</th>
                 <th>Stock</th>
             </tr>
             <?php if (count($products) > 0): ?>
@@ -205,6 +207,7 @@ if ($search) {
                     <td>Php <?php echo number_format($product['price'], 2); ?></td>
                     <td><?php echo htmlspecialchars($product['quantity']); ?></td>
                     <td><?php echo htmlspecialchars($product['brand']); ?></td>
+                    <td><?php echo htmlspecialchars($product['categories']); ?></td>
                     <td class="<?php echo $product['stock'] < 10 ? 'low-stock' : ''; ?>">
                         <?php echo htmlspecialchars($product['stock']); ?> <?php echo $product['stock'] < 10 ? '(Low Stock)' : ''; ?>
                     </td>
@@ -212,7 +215,7 @@ if ($search) {
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="5" class="no-products">No products found.</td>
+                    <td colspan="6" class="no-products">No products found.</td>
                 </tr>
             <?php endif; ?>
         </table>

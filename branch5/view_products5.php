@@ -1,27 +1,32 @@
 <?php
 session_start();
-require '../db.php';
+require '../db.php'; // Include your database connection file
 
 if (!isset($_SESSION['staff_user_id']) || $_SESSION['staff_role'] !== 'staff' || $_SESSION['staff_branch_id'] !== 5) {
-    header('Location: login.php'); 
+    header('Location: login.php'); // Redirect to login if not authorized
     exit;
 }
 
+// Handle search request
 $search = '';
 if (isset($_GET['search'])) {
     $search = $_GET['search'];
 }
 
+// Fetch products based on search query or low stock request
 if ($search) {
     if (strtolower($search) == 'lowstocks') {
+        // Fetch products with low stock (less than 10)
         $stmt = $db->prepare("SELECT * FROM products WHERE stock < 10");
         $stmt->execute();
     } else {
-        $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ?");
-        $stmt->execute(['%' . $search . '%', '%' . $search . '%']);
+        // Fetch products based on product name, brand, or categories
+        $stmt = $db->prepare("SELECT * FROM products WHERE product_name LIKE ? OR brand LIKE ? OR categories LIKE ?");
+        $stmt->execute(['%' . $search . '%', '%' . $search . '%', '%' . $search . '%']);
     }
     $products = $stmt->fetchAll();
 } else {
+    // Fetch all products if no search query
     $products = $db->query("SELECT * FROM products")->fetchAll();
 }
 ?>
@@ -38,12 +43,13 @@ if ($search) {
             font-family: Arial, sans-serif;
             background-color: lightgrey;
             margin: 0;
-            display: flex; 
+            display: flex; /* Use flexbox for layout */
         }
+        /* Main content styles */
         .main-content {
-            flex-grow: 1; 
+            flex-grow: 1; /* Allow content area to take remaining space */
             padding: 20px;
-            margin-left: 250px; 
+            margin-left: 250px; /* Set a left margin equal to the sidebar width */
             border: 3px solid black;
         }
 
@@ -51,10 +57,13 @@ if ($search) {
             color: black;
             text-align: center;
         }
+
+        /* Search Form */
         form {
             text-align: center;
             margin-bottom: 30px;
         }
+
         input[type="text"] {
             padding: 10px;
             width: 300px;
@@ -62,6 +71,7 @@ if ($search) {
             border-radius: 5px;
             font-size: 16px;
         }
+
         input[type="submit"], button {
             padding: 10px 15px;
             background-color: #5cb85c;
@@ -79,6 +89,8 @@ if ($search) {
         input[type="submit"]:hover, button:hover {
             background-color: #4cae4c;
         }
+
+        /* Table Styles */
         table {
             width: 95%;
             border-collapse: collapse;
@@ -87,26 +99,33 @@ if ($search) {
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         th, td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+
         th {
             background-color: #f8f8f8;
             color: #333;
             font-weight: bold;
         }
+
         tr:hover {
             background-color: #f1f1f1;
         }
+
         td:last-child {
             text-align: center;
         }
+
+        /* Low Stock Styling */
         .low-stock {
             color: red;
             font-weight: bold;
         }
+
         .go-back {
             display: inline-block;
             margin-top: 20px;
@@ -117,9 +136,11 @@ if ($search) {
             border-radius: 5px;
             font-size: 16px;
         }
+
         .go-back:hover {
             background-color: #286090;
         }
+
         .go-back-button {
             display: inline-flex;
             align-items: center;
@@ -131,12 +152,16 @@ if ($search) {
             font-size: 16px;
             transition: background-color 0.3s ease;
         }
+
         .go-back-button i {
-            margin-right: 8px;
+            margin-right: 8px; /* Space between the icon and text */
         }
+
         .go-back-button:hover {
             background-color: #4cae4c;
         }
+
+        /* No products message */
         .no-products {
             text-align: center;
             color: #888;
@@ -151,24 +176,27 @@ if ($search) {
     </div>
     <div class="main-content">
         <div>
-            <a href="dashboard5.php" class="go-back-button">
+            <a href="dashboard2.php" class="go-back-button">
                 <i class="fas fa-arrow-left"></i> Go Back
             </a>
         </div>
         <h1>Available Products</h1>
 
+        <!-- Search Form -->
         <form method="GET">
-            <input type="text" name="search" placeholder="Search by product name, description or type 'Low Stocks'" value="<?php echo htmlspecialchars($search); ?>">
+            <input type="text" name="search" placeholder="Search by product name, brand, or categories (or type 'Low Stocks')" value="<?php echo htmlspecialchars($search); ?>">
             <input type="submit" value="Search">
             <a href="<?php echo $_SERVER['PHP_SELF']; ?>"><button type="button">Refresh</button></a>
         </form>
 
+        <!-- Products Table -->
         <table>
             <tr>
                 <th>Product Name</th>
                 <th>Price</th>
                 <th>Quantity</th>
-                <th>Description</th>
+                <th>Brand</th>
+                <th>Category</th>
                 <th>Stock</th>
             </tr>
             <?php if (count($products) > 0): ?>
@@ -178,6 +206,7 @@ if ($search) {
                     <td>Php <?php echo number_format($product['price'], 2); ?></td>
                     <td><?php echo htmlspecialchars($product['quantity']); ?></td>
                     <td><?php echo htmlspecialchars($product['brand']); ?></td>
+                    <td><?php echo htmlspecialchars($product['categories']); ?></td>
                     <td class="<?php echo $product['stock'] < 10 ? 'low-stock' : ''; ?>">
                         <?php echo htmlspecialchars($product['stock']); ?> <?php echo $product['stock'] < 10 ? '(Low Stock)' : ''; ?>
                     </td>
@@ -185,7 +214,7 @@ if ($search) {
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="5" class="no-products">No products found.</td>
+                    <td colspan="6" class="no-products">No products found.</td>
                 </tr>
             <?php endif; ?>
         </table>

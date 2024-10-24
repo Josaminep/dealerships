@@ -1,13 +1,30 @@
 <?php
-session_start();
-require 'db.php';
+// Fetch products from the database
+$conn = new mysqli("localhost", "root", "", "dealership_shop");
 
-if (!isset($_SESSION['admin_user_id']) || $_SESSION['admin_role'] !== 'admin') {
-    header("Location: login.php");
-    exit();
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
 include 'sidebar.php';
+
+// Prepare the SQL query
+$search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
+$category = isset($_GET['category']) ? $conn->real_escape_string($_GET['category']) : '';
+
+$sql = "SELECT product_name, price, quantity, brand, stock, categories FROM products WHERE 1=1";
+
+// Add search condition if a search term is provided
+if (!empty($search)) {
+    $sql .= " AND (product_name LIKE '%$search%' OR brand LIKE '%$search%' OR categories LIKE '%$search%')";
+}
+
+// Add category condition if a category is selected
+if (!empty($category)) {
+    $sql .= " AND categories = '$category'";
+}
+
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -47,6 +64,7 @@ include 'sidebar.php';
             margin: 0;
         }
 
+        /* Table styles */
         table {
             width: 100%;
             margin-top: 20px;
@@ -66,12 +84,13 @@ include 'sidebar.php';
         }
 
         th {
-            background-color: #007bff;
+            background-color: #003366;
             color: white;
             text-transform: uppercase;
             font-weight: bold;
         }
 
+        /* Zebra striping for rows */
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
@@ -95,7 +114,7 @@ include 'sidebar.php';
 
         button {
             padding: 10px 15px;
-            background-color: #007bff;
+            background-color: #003366;
             border: none;
             color: white;
             border-radius: 4px;
@@ -113,10 +132,18 @@ include 'sidebar.php';
         <div class="header">
             <h1>Product List</h1>
         </div>
-
-        <!-- Search Form -->
+        
+        <!-- Category Filter -->
         <div class="search-container">
             <form method="get">
+                <select name="category" onchange="this.form.submit();">
+                    <option value="">Select Category</option>
+                    <option value="Motors" <?php echo (isset($_GET['category']) && $_GET['category'] == 'Motors') ? 'selected' : ''; ?>>Motors</option>
+                    <option value="Gear" <?php echo (isset($_GET['category']) && $_GET['category'] == 'Gear') ? 'selected' : ''; ?>>Gear</option>
+                    <option value="Accessories" <?php echo (isset($_GET['category']) && $_GET['category'] == 'Accessories') ? 'selected' : ''; ?>>Accessories</option>
+                    <option value="Maintenance" <?php echo (isset($_GET['category']) && $_GET['category'] == 'Maintenance') ? 'selected' : ''; ?>>Maintenance</option>
+                    <option value="Tires" <?php echo (isset($_GET['category']) && $_GET['category'] == 'Tires') ? 'selected' : ''; ?>>Tires</option>
+                </select>
                 <input type="text" name="search" placeholder="Search products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                 <button type="submit">Search</button>
             </form>
@@ -133,23 +160,6 @@ include 'sidebar.php';
             </tr>
 
             <?php
-            // Fetch products from the database
-            $conn = new mysqli("localhost", "root", "", "dealership_shop");
-
-            if ($conn->connect_error) {
-                die("Connection failed: " . $conn->connect_error);
-            }
-
-            // Prepare the SQL query
-            $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
-            $sql = "SELECT product_name, price, quantity, brand, stock, categories FROM products";
-
-            // Add search condition if a search term is provided
-            if (!empty($search)) {
-                $sql .= " WHERE product_name LIKE '%$search%' OR brand LIKE '%$search%' OR categories LIKE '%$search%'";
-            }
-
-            $result = $conn->query($sql);
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     echo '<tr>';
