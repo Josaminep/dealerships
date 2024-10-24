@@ -89,7 +89,7 @@
     <h1>Ever Sure Shop </h1>
     <a href="dealerships/login.php" class="button admin-btn">Administrator Login</a>
     <a href="dealerships/customer/login.php" class="button customer-btn">Customer Login</a>
-    <p>Welcome to the Sure Motor Shop Portal</p>
+    <p>Welcome to the Motor Shop Portal</p>
   </div>
 </body>
 </html>
